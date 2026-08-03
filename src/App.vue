@@ -1,26 +1,26 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import WeatherService from './components/WeatherService.vue'
+import PracticeSection from './components/PracticeSection.vue'
+const pViewActivation = true // 실습 영역을 표시할지 결정하는 변수
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <!-- ㅡMain Wrapper-->
+  <main class="app-container">
+    <!-- 과제 영역 -->
+    <WeatherService />
+    <!-- 실습 영역 -->
+    <PracticeSection v-if="pViewActivation" />
+  </main>
 </template>
 
 <style scoped>
+.app-container {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 20px;
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;

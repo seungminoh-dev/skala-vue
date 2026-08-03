@@ -7,6 +7,15 @@
   font-weight: normal;
 }
 
+.practice-card {
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background-soft);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+}
+
 a,
 .green {
   text-decoration: none;
