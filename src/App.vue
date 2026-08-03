@@ -1,5 +1,6 @@
 <script setup>
-import WeatherService from './components/WeatherService.vue'
+import ThemeModeToggle from './components/ThemeModeToggle.vue'
+import WeatherParent from './components/practices/weather/WeatherParent.vue'
 import PracticeSection from './components/PracticeSection.vue'
 const pViewActivation = true // 실습 영역을 표시할지 결정하는 변수
 </script>
@@ -8,9 +9,10 @@ const pViewActivation = true // 실습 영역을 표시할지 결정하는 변�
   <!-- ㅡMain Wrapper-->
   <main class="app-container">
     <!-- 과제 영역 -->
-    <WeatherService />
+    <WeatherParent />
     <!-- 실습 영역 -->
     <PracticeSection v-if="pViewActivation" />
+    <ThemeModeToggle />
   </main>
 </template>
 
