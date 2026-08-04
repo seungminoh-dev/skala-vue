@@ -1,4 +1,4 @@
-// AI GENERATED CODE: OpenWeather의 Geocoding 및 Current Weather 요청과 응답 정규화를 담당합니다.
+// AI GENERATED CODE: OpenWeather 요청과 Raw JSON 정규화만 담당하는 단순 통신 모듈입니다.
 
 import axios from 'axios'
 
@@ -10,65 +10,27 @@ const apiClient = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
 })
 
-export class OpenWeatherApiError extends Error {
-  constructor(message, { code = 'UNKNOWN', status = null, retryAfter = null } = {}) {
-    super(message)
-    this.name = 'OpenWeatherApiError'
-    this.code = code
-    this.status = status
-    this.retryAfter = retryAfter
-  }
-}
-
 const getApiKey = () => import.meta.env.VITE_OPENWEATHER_API_KEY || import.meta.env.API_KEY
-
-export const hasOpenWeatherApiKey = () => Boolean(getApiKey())
 
 const requireApiKey = () => {
   const apiKey = getApiKey()
 
   if (!apiKey) {
-    throw new OpenWeatherApiError('OpenWeather API Key가 설정되지 않았습니다.', {
-      code: 'API_KEY_MISSING',
-    })
+    throw new Error('OpenWeather API Key가 설정되지 않았습니다.')
   }
 
   return apiKey
 }
 
-const toApiError = (error) => {
-  if (error instanceof OpenWeatherApiError) {
-    return error
-  }
-
-  const status = error.response?.status ?? null
-  const responseCode = Number(error.response?.data?.cod ?? status) || null
-  const retryAfterHeader = Number(error.response?.headers?.['retry-after'])
-  const retryAfter = Number.isFinite(retryAfterHeader) ? retryAfterHeader * 1000 : null
-  const message =
-    error.response?.data?.message || error.message || '날씨 정보를 가져오지 못했습니다.'
-
-  return new OpenWeatherApiError(message, {
-    code: responseCode ? `HTTP_${responseCode}` : 'NETWORK_ERROR',
-    status,
-    retryAfter,
+const request = async (path, params) => {
+  const response = await apiClient.get(path, {
+    params: {
+      ...params,
+      appid: requireApiKey(),
+    },
   })
-}
 
-const request = async (path, params, signal) => {
-  try {
-    const response = await apiClient.get(path, {
-      params: {
-        ...params,
-        appid: requireApiKey(),
-      },
-      signal,
-    })
-
-    return response.data
-  } catch (error) {
-    throw toApiError(error)
-  }
+  return response.data
 }
 
 const normalizeLocation = (location) => ({
@@ -80,10 +42,10 @@ const normalizeLocation = (location) => ({
   state: location.state ?? '',
   // [사용] ISO 3166-1 alpha-2 국가 코드: 지역 표시와 URL slug에 사용합니다.
   country: location.country,
-  // [사용] 위도·경도(십진수 degree): 실제 날씨 요청과 내부 Location Key에 사용합니다.
+  // [사용] 위도·경도(십진수 degree): 선택한 도시의 실제 날씨 요청에 사용합니다.
   lat: location.lat,
   lon: location.lon,
-  // [사용] 위치 데이터 출처: 사전 도시·검색 결과·현재 위치를 구분합니다.
+  // [사용] 위치 데이터 출처: Geocoding 검색 결과와 현재 위치를 구분합니다.
   source: 'geocoding',
 })
 
@@ -91,7 +53,7 @@ const normalizeCurrentWeather = (weather) => {
   const condition = weather.weather?.[0] ?? {}
 
   return {
-    // [미사용] OpenWeather 내부 도시 ID입니다. 자체 Location Key를 쓰므로 현재 정리 후보입니다.
+    // [미사용] OpenWeather 내부 도시 ID입니다. 자체 UUID를 쓰므로 현재 정리 후보입니다.
     providerId: weather.id ?? null,
     // [등록 시 사용] OpenWeather 도시명입니다. 현재 위치 등록의 표시명·slug 보정에 사용합니다.
     providerName: weather.name ?? '',
@@ -139,35 +101,27 @@ const normalizeCurrentWeather = (weather) => {
     sunset: weather.sys?.sunset ? weather.sys.sunset * 1000 : null,
     // [사용, second] UTC 기준 현지 시차이며 관측·일출·일몰 현지 시각 계산에 사용합니다.
     timezoneOffset: weather.timezone ?? 0,
-    // [사용, ms] API 필드가 아닌 클라이언트 수신 시각이며 Cache 만료와 갱신 표시에 사용합니다.
+    // [사용, ms] API 필드가 아닌 수신 시각이며 2시간 Refresh 판정과 갱신 표시에 사용합니다.
     fetchedAt: Date.now(),
   }
 }
 
-export const searchLocations = async (query, { limit = 5, signal } = {}) => {
-  const locations = await request(
-    '/geo/1.0/direct',
-    {
-      q: query,
-      limit,
-    },
-    signal,
-  )
+export const searchLocations = async (query, { limit = 5 } = {}) => {
+  const locations = await request('/geo/1.0/direct', {
+    q: query,
+    limit,
+  })
 
   return locations.map(normalizeLocation)
 }
 
-export const getCurrentWeather = async ({ lat, lon, signal }) => {
-  const weather = await request(
-    '/data/2.5/weather',
-    {
-      lat,
-      lon,
-      units: 'metric',
-      lang: 'kr',
-    },
-    signal,
-  )
+export const getCurrentWeather = async ({ lat, lon }) => {
+  const weather = await request('/data/2.5/weather', {
+    lat,
+    lon,
+    units: 'metric',
+    lang: 'kr',
+  })
 
   return normalizeCurrentWeather(weather)
 }

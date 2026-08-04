@@ -10,6 +10,7 @@ import { useWeatherStore } from '@/stores/weather.js'
 const configStore = useConfigStore()
 const weatherStore = useWeatherStore()
 const isLocating = ref(false)
+const isRefreshing = ref(false)
 
 const locationOptions = computed(() => weatherStore.weatherList)
 const primaryLocationKey = computed({
@@ -62,16 +63,34 @@ const registerCurrentLocation = async () => {
       source: 'geolocation',
     })
 
-    configStore.setPrimaryLocation(result.location.key)
-    ElMessage.success(
-      result.status === 'duplicate'
-        ? `${result.location.name}을(를) 메인 지역으로 설정했습니다.`
-        : `${result.location.name} 날씨를 추가하고 메인 지역으로 설정했습니다.`,
-    )
+    configStore.setPrimaryLocation(result.location.id)
+    ElMessage.success(`${result.location.name} 날씨를 추가하고 메인 지역으로 설정했습니다.`)
   } catch (error) {
     ElMessage.error(locationErrorMessage(error))
   } finally {
     isLocating.value = false
+  }
+}
+
+const refreshAllWeather = async () => {
+  if (weatherStore.weatherList.length === 0) {
+    ElMessage.info('새로고침할 등록 도시가 없습니다.')
+    return
+  }
+
+  isRefreshing.value = true
+
+  try {
+    const result = await weatherStore.refreshAllWeather()
+
+    if (result.failed === 0) {
+      ElMessage.success(`${result.success}개 도시의 날씨를 새로고침했습니다.`)
+      return
+    }
+
+    ElMessage.warning(`새로고침 결과: 성공 ${result.success}개, 실패 ${result.failed}개`)
+  } finally {
+    isRefreshing.value = false
   }
 }
 
@@ -127,6 +146,17 @@ onMounted(() => {
     <ElButton class="location-button" :loading="isLocating" plain @click="registerCurrentLocation">
       <span aria-hidden="true">⌖</span>
       내 위치
+    </ElButton>
+
+    <ElButton
+      class="location-button refresh-button"
+      :loading="isRefreshing"
+      plain
+      aria-label="전체 날씨 새로고침"
+      @click="refreshAllWeather"
+    >
+      <span aria-hidden="true">↻</span>
+      새로고침
     </ElButton>
 
     <div class="setting-group compact-setting">

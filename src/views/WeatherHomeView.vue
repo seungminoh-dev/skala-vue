@@ -14,8 +14,6 @@ import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
 // Essential DAY2: 기존 반응형 변수명을 유지합니다.
 const searchQuery = ref('')
 const selectedCityInfo = ref(null)
-const isRefreshing = ref(false)
-const refreshError = ref('')
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
 const { weatherList } = storeToRefs(weatherStore)
@@ -88,17 +86,6 @@ const formatTime = (timestamp, timezoneOffset = 0) => {
     timeZone: 'UTC',
   }).format(new Date(timestamp + timezoneOffset * 1000))
 }
-const errorMessage = (error) => {
-  const messages = {
-    API_KEY_MISSING: 'OpenWeather API Key가 설정되지 않아 날씨를 갱신할 수 없습니다.',
-    LOCAL_RATE_LIMIT: '안전 호출 한도에 도달해 마지막 저장 데이터를 표시합니다.',
-    RATE_LIMITED: 'OpenWeather 호출 한도를 초과해 마지막 저장 데이터를 표시합니다.',
-    HTTP_401: 'OpenWeather API Key를 확인해 주세요.',
-  }
-
-  return messages[error?.code] ?? error?.message ?? '날씨를 갱신하지 못했습니다.'
-}
-
 // Essential DAY1: 자식 Component가 발생시킨 이벤트를 부모 View에서 처리합니다.
 const updateSearchQuery = (content) => {
   searchQuery.value = content
@@ -107,11 +94,11 @@ const selectCity = (city) => {
   selectedCityInfo.value = city
 }
 const selectRegisteredCity = (city) => {
-  const registeredCity = weatherList.value.find((item) => item.id === city.key) ?? city
+  const registeredCity = weatherList.value.find((item) => item.id === city.id) ?? city
   selectedCityInfo.value = registeredCity
 
   if (!configStore.primaryLocationKey) {
-    configStore.setPrimaryLocation(registeredCity.id ?? registeredCity.key)
+    configStore.setPrimaryLocation(registeredCity.id)
   }
 }
 const showDetail = (city) => {
@@ -129,19 +116,11 @@ const removeCity = (city) => {
   }
 }
 
-onMounted(async () => {
+onMounted(() => {
   configStore.hydrate()
   weatherStore.hydrate()
   selectedCityInfo.value =
     weatherList.value.find((item) => item.id === configStore.primaryLocationKey) ?? null
-
-  if (weatherList.value.length === 0) return
-
-  isRefreshing.value = true
-  const results = await weatherStore.refreshStaleLocations()
-  const failedResult = results.find((result) => result.status === 'rejected')
-  refreshError.value = failedResult ? errorMessage(failedResult.error) : ''
-  isRefreshing.value = false
 })
 
 // Essential DAY2: 선택 도시와 검색어 변경을 각각 watch와 watchEffect로 감시합니다.
@@ -229,28 +208,17 @@ watchEffect(() => {
         </div>
       </BaseDashboardCard>
 
-      <ElAlert
-        v-if="refreshError"
-        class="weather-surface"
-        :title="refreshError"
-        type="warning"
-        show-icon
-        :closable="false"
-      />
-
       <output class="weather-status" aria-live="polite">
         <ElAlert
           class="weather-surface"
           :title="
-            isRefreshing
-              ? '저장된 도시의 날씨를 갱신하고 있습니다.'
-              : selectedCityInfo
-                ? `${selectedCityInfo.name}이 선택되었습니다.`
-                : weatherList.length
-                  ? '날씨 카드를 선택하거나 상세 정보를 확인해 보세요.'
-                  : '도시를 등록하면 현재 날씨가 여기에 표시됩니다.'
+            selectedCityInfo
+              ? `${selectedCityInfo.name}이 선택되었습니다.`
+              : weatherList.length
+                ? '날씨 카드를 선택하거나 상세 정보를 확인해 보세요.'
+                : '도시를 등록하면 현재 날씨가 여기에 표시됩니다.'
           "
-          :type="isRefreshing ? 'info' : 'success'"
+          type="success"
           show-icon
           :closable="false"
         />

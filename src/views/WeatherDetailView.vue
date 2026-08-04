@@ -1,6 +1,6 @@
 <!-- AI GENERATED CODE: 메인 설정 단위와 실제 OpenWeather JSON을 반영한 상세 Weather Report입니다. -->
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
@@ -10,8 +10,6 @@ const route = useRoute()
 const router = useRouter()
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
-const isLoading = ref(false)
-const loadError = ref('')
 
 // 기존 제출 변수명 weather를 유지합니다.
 const weather = computed(
@@ -53,46 +51,19 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
   }).format(new Date(timestamp + timezoneOffset * 1000))
 }
 
-const errorMessage = (error) => {
-  const messages = {
-    API_KEY_MISSING: 'OpenWeather API Key가 설정되지 않았습니다.',
-    LOCAL_RATE_LIMIT: '안전 호출 한도에 도달해 마지막 저장 데이터를 표시합니다.',
-    RATE_LIMITED: 'OpenWeather 호출 한도를 초과해 마지막 저장 데이터를 표시합니다.',
-    LOCATION_NOT_FOUND: '등록된 도시 정보를 찾을 수 없습니다.',
-    HTTP_401: 'OpenWeather API Key를 확인해 주세요.',
-  }
-
-  return messages[error?.code] ?? error?.message ?? '날씨 정보를 갱신하지 못했습니다.'
-}
-
-const loadWeather = async (routeId) => {
+const syncWeatherRoute = async (routeId) => {
   configStore.hydrate()
   weatherStore.hydrate()
-  loadError.value = ''
 
-  if (!weather.value) {
-    loadError.value = '등록된 도시 정보를 찾을 수 없습니다.'
-    return
-  }
+  if (!weather.value) return
 
   // 좌표 Key가 포함된 기존 북마크는 대응하는 읽기 쉬운 slug URL로 교체합니다.
   if (weather.value.slug && routeId !== weather.value.slug) {
     await router.replace({ name: 'detail', params: { id: weather.value.slug } })
-    return
-  }
-
-  isLoading.value = true
-
-  try {
-    await weatherStore.ensureWeather(weather.value.id)
-  } catch (error) {
-    loadError.value = errorMessage(error)
-  } finally {
-    isLoading.value = false
   }
 }
 
-watch(() => route.params.id, loadWeather, { immediate: true })
+watch(() => route.params.id, syncWeatherRoute, { immediate: true })
 </script>
 
 <template>
@@ -127,23 +98,6 @@ watch(() => route.params.id, loadWeather, { immediate: true })
         </div>
       </section>
 
-      <ElAlert
-        v-if="isLoading"
-        class="load-alert weather-surface"
-        title="최신 날씨를 확인하고 있습니다."
-        type="info"
-        show-icon
-        :closable="false"
-      />
-      <ElAlert
-        v-if="loadError"
-        class="load-alert weather-surface"
-        :title="loadError"
-        type="warning"
-        show-icon
-        :closable="false"
-      />
-
       <section class="metric-section" aria-labelledby="metric-title">
         <div class="section-heading">
           <div>
@@ -177,7 +131,7 @@ watch(() => route.params.id, loadWeather, { immediate: true })
           </div>
         </div>
 
-        <ElDescriptions class="weather-details" :column="1" border :aria-busy="isLoading">
+        <ElDescriptions class="weather-details" :column="1" border>
           <ElDescriptionsItem label="현재 관측 온도 범위">
             <span class="detail-item">
               {{ displayTemperature(weather.tempMin) }} / {{ displayTemperature(weather.tempMax) }}
@@ -308,7 +262,6 @@ watch(() => route.params.id, loadWeather, { immediate: true })
   font-weight: 700;
 }
 
-.load-alert,
 .metric-section,
 .observation-section {
   margin-top: 1.5rem;

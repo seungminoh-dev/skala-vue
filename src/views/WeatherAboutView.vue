@@ -1,4 +1,4 @@
-<!-- AI GENERATED CODE: 실제 데이터·설정·Cache 정책을 설명하는 Weather Board 소개 화면입니다. -->
+<!-- AI GENERATED CODE: 실제 데이터·설정·단순 Refresh 정책을 설명하는 Weather Board 소개 화면입니다. -->
 <script setup>
 import { RouterLink } from 'vue-router'
 
@@ -10,8 +10,8 @@ const features = [
   },
   {
     icon: '↻',
-    title: '안전한 날씨 갱신',
-    description: '호출 횟수를 관리하며 오류가 발생하면 마지막 정상 날씨를 유지합니다.',
+    title: '이해하기 쉬운 날씨 갱신',
+    description: '접속 시 오래된 날씨를 갱신하고 버튼으로 전체 날씨를 새로고침합니다.',
   },
   {
     icon: '°',

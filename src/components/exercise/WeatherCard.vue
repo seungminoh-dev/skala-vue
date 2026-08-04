@@ -54,7 +54,7 @@ const formatUpdatedAt = (timestamp) => {
 const formatMetric = (value, unit) =>
   value === null || value === undefined ? '정보 없음' : `${value}${unit}`
 
-const isStale = (expiresAt) => !expiresAt || expiresAt <= Date.now()
+const isStale = (fetchedAt) => !fetchedAt || Date.now() - fetchedAt >= 2 * 60 * 60 * 1000
 const selectCard = (city) => emit('select-card', city)
 const clickDetail = (city) => emit('click-detail', city)
 const removeCity = (city) => emit('remove-city', city)
@@ -117,7 +117,7 @@ const removeCity = (city) => emit('remove-city', city)
           더움(25도 이상)
         </ElTag>
         <ElTag v-else class="temperature-badge is-cool" effect="light"> 선선함(25도 미만) </ElTag>
-        <ElTag v-if="isStale(city.expiresAt)" effect="plain" type="warning"> 업데이트 필요 </ElTag>
+        <ElTag v-if="isStale(city.fetchedAt)" effect="plain" type="warning"> 업데이트 필요 </ElTag>
       </div>
 
       <footer class="card-footer">

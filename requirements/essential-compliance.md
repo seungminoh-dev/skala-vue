@@ -45,5 +45,11 @@ DAY4의 Mock Data는 “나중에 Pinia Store로 이전”하기 위한 임시 �
 ## 상세 Route 식별자 분리
 
 - 과제 형식인 `/weather/:id`와 동적 상세 조회는 유지합니다.
-- URL의 `id` 값에는 `seoul-kr` 형태의 Location slug를 사용하고, 좌표 Key는 Store 내부에만 둡니다.
+- URL의 `id` 값에는 `seoul-kr` 형태의 Location slug를 사용하고, 내부 UUID는 Store에만 둡니다.
 - `v-for :key="item.id"`, 선택·삭제·메인 지역 연결은 기존 내부 ID 계약을 그대로 유지합니다.
+
+## API Refresh 단순화
+
+- `weatherList` 배열 전체를 localStorage에 JSON으로 저장해 과제의 배열 반응성을 유지합니다.
+- 접속 시 2시간 경과 항목 갱신, 도시 추가 시 단건 조회, 상단 버튼의 전체 갱신만 수행합니다.
+- 호출 제한 추적·재시도·검색 Cache·국내 도시 preset은 제거했으며 Essential 항목에는 영향이 없습니다.

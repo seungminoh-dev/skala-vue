@@ -1,4 +1,4 @@
-<!-- AI GENERATED CODE: Location slug에 대응하는 전역 Weather App Shell입니다. -->
+<!-- AI GENERATED CODE: 단순 Refresh 규칙을 실행하는 전역 Weather App Shell입니다. -->
 <script setup>
 import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
@@ -9,9 +9,10 @@ import { useWeatherStore } from '@/stores/weather.js'
 import { resolveWeatherCanvas } from '@/utils/weatherBackground.js' // 현재 정보를 판단하여 배경을 반환해주는 유틸
 
 const route = useRoute()
+/* Pinia Store */
 const configStore = useConfigStore()
 const weatherStore = useWeatherStore()
-const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path))
+const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path)) // 세부 날씨 사이트는 RouteLink에 없으므로 UI보정용
 const primaryWeather = computed(
   () =>
     weatherStore.weatherList.find((item) => item.id === configStore.primaryLocationKey) ??
@@ -34,9 +35,10 @@ const canvasStyle = computed(() => ({
   '--weather-background-image': `url("${weatherCanvas.value.background}")`,
 }))
 
-onMounted(() => {
+onMounted(async () => {
   configStore.hydrate()
   weatherStore.hydrate()
+  await weatherStore.refreshStaleWeather()
 })
 </script>
 
@@ -52,14 +54,14 @@ onMounted(() => {
 
           <nav class="main-nav" aria-label="주요 메뉴">
             <RouterLink class="nav-link" :class="{ 'is-active': activeMenu === '/' }" to="/">
-              Weather
+              날씨
             </RouterLink>
             <RouterLink
               class="nav-link"
               :class="{ 'is-active': activeMenu === '/about' }"
               to="/about"
             >
-              About
+              사이트 정보
             </RouterLink>
           </nav>
         </div>
@@ -73,7 +75,7 @@ onMounted(() => {
     </main>
 
     <footer class="app-footer weather-surface">
-      <span>현재 날씨는 마지막 정상 응답을 안전하게 보관합니다.</span>
+      <span>SKALA VUE3-JS HW - Weather Service(260805)</span>
       <a href="https://openweathermap.org/" target="_blank" rel="noreferrer">Data by OpenWeather</a>
     </footer>
   </div>

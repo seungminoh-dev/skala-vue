@@ -15,6 +15,7 @@ flowchart TD
   SETTINGS["SettingsToolbar"]
   PRIMARY["메인 지역"]
   CURRENT["내 위치"]
+  REFRESH["전체 Refresh"]
   UNIT["UnitToggler · °C/°F"]
   THEME["ThemeModeToggle · Bright/Dark"]
   OUTLET["RouterView"]
@@ -39,6 +40,7 @@ flowchart TD
   HEADER --> SETTINGS
   SETTINGS --> PRIMARY
   SETTINGS --> CURRENT
+  SETTINGS --> REFRESH
   SETTINGS --> UNIT
   SETTINGS --> THEME
   APP --> OUTLET
@@ -68,6 +70,7 @@ Weather Board
 ├── Global Settings
 │   ├── 메인 지역
 │   ├── 내 위치 등록
+│   ├── 전체 날씨 새로고침
 │   ├── 섭씨 / 화씨
 │   └── Bright / Dark
 ├── Weather                                      /
@@ -87,13 +90,13 @@ Weather Board
 1. 메인 지역의 현재 온도·상태와 Unicode 날씨 기호
 2. 습도·풍속·가시거리·일몰을 담은 Glass Metric Strip
 3. 도시 필터와 도시 추가
-4. 선택·갱신·오류 상태
+4. 선택 상태
 5. 메인 지역 우선 Weather Card Grid
    - 도시와 지역
    - 현재·체감 온도
    - 습도·풍속·구름량
    - 25도 기준 과제 라벨
-   - 마지막 갱신과 만료 상태
+   - 마지막 갱신과 2시간 경과 상태
    - 삭제와 상세 이동
 
 ### Weather Detail
@@ -107,7 +110,7 @@ Weather Board
 ### About
 
 1. 서비스 목적
-2. 내 위치·안전한 Cache·개인화 기능
+2. 내 위치·2시간 자동 Refresh·개인화 기능
 3. localStorage 데이터 정책
 
 ## 4. 컴포넌트 책임
@@ -115,20 +118,19 @@ Weather Board
 | 영역     | 컴포넌트/모듈           | 책임                                                    |
 | -------- | ----------------------- | ------------------------------------------------------- |
 | App      | `App.vue`               | 날씨 배경 전환, Floating Navigation, RouterView, Footer |
-| Settings | `SettingsToolbar`       | 메인 지역·내 위치·단위·테마 통합 배치                   |
+| Settings | `SettingsToolbar`       | 메인 지역·내 위치·전체 Refresh·단위·테마 통합 배치      |
 | Settings | `UnitToggler`           | 섭씨/화씨 설정 변경                                     |
 | Settings | `ThemeModeToggle`       | Bright/Dark 설정 변경                                   |
 | Home     | `WeatherHomeView`       | 모든 반응형 검색·선택·목록·이동 상태 유지               |
 | Home     | `BaseDashboardCard`     | Slot 기반 공통 Surface                                  |
 | Home     | `SearchBar`             | 네이티브 `:value/@input` 한글 검색                      |
-| Home     | `CityRegistrationModal` | 국내 저장 좌표·해외 Geocoding 도시 등록                 |
+| Home     | `CityRegistrationModal` | OpenWeather Geocoding 검색과 도시 등록                  |
 | Home     | `WeatherCard`           | 요약·선택·삭제·상세 이동·단위 표시                      |
 | Detail   | `WeatherDetailView`     | Route slug로 실제 날씨 조회·단위 표시                   |
-| Data     | `weatherStore`          | 내부 좌표 Key, URL slug, Cache, 호출 제한, API 동기화   |
+| Data     | `weatherStore`          | 날씨 배열 저장, 도시 등록, 자동·수동 Refresh            |
 | Data     | `config.js`             | `useConfigStore`로 메인 지역, 단위, 테마 영속화         |
 | Visual   | `weatherVisuals`        | OpenWeather 상태를 임시 Unicode 날씨 기호로 변환        |
 | Visual   | `weatherBackground`     | 날씨 상태·온도를 Canvas 배경과 Tone으로 변환            |
-| Utility  | `koreanCities`          | 한국 주요 도시 좌표와 로컬 검색 Utility                 |
 | Style    | `base.css`              | 레이아웃·색상·반경·Surface 디자인 토큰                  |
 | Style    | `main.css`              | Element Plus 공통 규칙과 `weather-surface` primitive    |
 
@@ -146,8 +148,11 @@ sequenceDiagram
 
   User->>Toolbar: 내 위치 또는 등록 도시를 메인 지역으로 설정
   Toolbar->>Store: 위치·설정 저장
-  Store->>API: 만료된 현재 날씨만 요청
+  Store->>API: 접속 시 2시간 지난 날씨만 요청
   API-->>Store: Current Weather JSON
+  User->>Toolbar: 전체 새로고침
+  Toolbar->>Store: 등록 도시 전체 Refresh
+  Store-->>User: 성공·실패 개수 Toast
   Store-->>Home: 메인 지역 우선 weatherList
   User->>Card: 카드 선택
   Card-->>Home: select-card(city)
@@ -155,17 +160,25 @@ sequenceDiagram
   User->>Card: 상세 보기
   Card-->>Home: click-detail(city), 버블링 중단
   Home->>Detail: /weather/:id (사람이 읽는 slug)
-  Detail->>Store: slug를 내부 좌표 Key로 해석해 Cache 갱신
+  Detail->>Store: slug로 localStorage 날씨 배열 조회
 ```
 
 ## 6. Location 식별자 원칙
 
-- `key`: `geo:위도:경도` 형식의 내부 식별자입니다. Store 조회·선택·삭제·Cache 연결에만 사용합니다.
+- `id`: 새 등록 항목에 발급하는 내부 UUID입니다. 선택·삭제·메인 지역 연결에 사용합니다.
 - `slug`: `seoul-kr`처럼 영문 도시명과 국가 코드로 만든 URL 식별자입니다.
 - 같은 slug가 생기면 좌표 원문을 노출하지 않는 짧은 fingerprint를 뒤에 붙여 충돌을 피합니다.
 - 기존 좌표 Key 상세 URL은 같은 도시의 slug URL로 자동 교체해 저장된 북마크를 호환합니다.
 
-## 7. 레이아웃 원칙
+## 7. API Refresh 원칙
+
+- localStorage에는 위치와 현재 날씨가 결합된 `weatherList` 배열 전체를 JSON으로 저장합니다.
+- 사이트 접속 시 `fetchedAt`이 없거나 2시간 지난 항목만 한 번씩 갱신합니다.
+- 도시 추가 시 선택한 한 항목의 Current Weather만 요청해 배열에 추가합니다.
+- 상단 새로고침 버튼은 등록된 전체 항목을 갱신하고 성공·실패 개수를 Toast로 표시합니다.
+- 자동 갱신 오류는 Console에만 기록하며 재시도·호출 제한 추적·검색 Cache는 사용하지 않습니다.
+
+## 8. 레이아웃 원칙
 
 - Weather Canvas의 Header·본문·Footer 최대 너비는 모두 `1120px`입니다.
 - 배경은 메인 지역 또는 상세 지역의 날씨에 따라 맑음·폭염·비·눈 자산을 전환합니다.
