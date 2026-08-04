@@ -42,10 +42,10 @@ DAY4의 Mock Data는 “나중에 Pinia Store로 이전”하기 위한 임시 �
 - 최신 요청에 따라 `stores/configStore.js`는 `stores/config.js`로 이름만 변경했습니다.
 - Store ID, `useConfigStore` export, 섭씨·화씨 및 테마 기능은 변경하지 않았습니다.
 
-## 상세 Route 식별자 분리
+## 상세 Route 식별자
 
 - 과제 형식인 `/weather/:id`와 동적 상세 조회는 유지합니다.
-- URL의 `id` 값에는 `seoul-kr` 형태의 Location slug를 사용하고, 내부 UUID는 Store에만 둡니다.
+- URL과 Store 모두 `seoul`처럼 영문 도시명을 정리한 하나의 `id`를 사용합니다.
 - `v-for :key="item.id"`, 선택·삭제·메인 지역 연결은 기존 내부 ID 계약을 그대로 유지합니다.
 
 ## API Refresh 단순화

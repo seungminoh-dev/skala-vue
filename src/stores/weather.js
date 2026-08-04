@@ -2,28 +2,31 @@
 
 import { defineStore } from 'pinia'
 import { getCurrentWeather, searchLocations } from '@/services/openWeatherApi.js'
-import { addLocationSlugs, createUniqueLocationSlug } from '@/utils/locationSlug.js'
 
 const STORAGE_KEY = 'weather-dashboard:v1'
-const WEATHER_REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000
 
 const hasLocalStorage = () => typeof window !== 'undefined' && Boolean(window.localStorage)
 
-const createWeatherId = () => {
-  if (globalThis.crypto?.randomUUID) {
-    return `weather:${globalThis.crypto.randomUUID()}`
-  }
+const createCityId = (weather) => {
+  const englishName = weather.englishName || weather.providerName || weather.name || ''
+  const normalizedName = String(englishName)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-  return `weather:${Date.now()}:${Math.random().toString(36).slice(2)}`
+  return (normalizedName || String(weather.providerId || 'city')).slice(0, 24).replace(/-+$/g, '')
 }
 
 const withDisplayFields = (weather) => {
-  const { key: legacyKey, ...weatherFields } = weather
-  const id = weather.id ?? legacyKey ?? createWeatherId()
+  const weatherFields = { ...weather }
+  delete weatherFields.key
+  delete weatherFields.slug
 
   return {
     ...weatherFields,
-    id,
+    id: createCityId(weather),
     region: weather.region || [weather.state, weather.country].filter(Boolean).join(' · '),
   }
 }
@@ -31,7 +34,7 @@ const withDisplayFields = (weather) => {
 // 이전 객체형 저장 데이터는 한 번만 날씨 배열로 변환해 기존 등록 도시를 보존합니다.
 const parseStoredWeatherList = (storedData) => {
   if (Array.isArray(storedData)) {
-    return addLocationSlugs(storedData.map(withDisplayFields))
+    return storedData.map(withDisplayFields)
   }
 
   if (Array.isArray(storedData?.registeredLocations)) {
@@ -40,7 +43,7 @@ const parseStoredWeatherList = (storedData) => {
       ...(storedData.weatherByKey?.[location.key] ?? {}),
     }))
 
-    return addLocationSlugs(migratedWeather.map(withDisplayFields))
+    return migratedWeather.map(withDisplayFields)
   }
 
   return []
@@ -92,7 +95,6 @@ export const useWeatherStore = defineStore('weather', {
       this.hydrate()
 
       const currentWeather = await getCurrentWeather(candidate)
-      const id = createWeatherId()
       const name =
         candidate.source === 'geolocation'
           ? currentWeather.providerName || candidate.name
@@ -105,11 +107,7 @@ export const useWeatherStore = defineStore('weather', {
       const location = {
         ...candidate,
         ...currentWeather,
-        id,
-        slug: createUniqueLocationSlug(
-          { ...candidate, name, englishName, country },
-          this.weatherList.map((weather) => weather.slug),
-        ),
+        id: createCityId({ ...candidate, ...currentWeather, name, englishName }),
         name,
         englishName,
         country,
@@ -159,7 +157,7 @@ export const useWeatherStore = defineStore('weather', {
       this.hydrate()
       const now = Date.now()
       const staleLocations = this.weatherList.filter(
-        (weather) => !weather.fetchedAt || now - weather.fetchedAt >= WEATHER_REFRESH_INTERVAL_MS,
+        (weather) => !weather.fetchedAt || now - weather.fetchedAt >= 2 * 60 * 60 * 1000,
       )
 
       return this.refreshLocations(staleLocations)

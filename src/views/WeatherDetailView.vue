@@ -1,22 +1,20 @@
 <!-- AI GENERATED CODE: 메인 설정 단위와 실제 OpenWeather JSON을 반영한 상세 Weather Report입니다. -->
 <script setup>
-import { computed, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
 
 const route = useRoute()
-const router = useRouter()
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
+weatherStore.hydrate()
+configStore.hydrate()
 
 // 기존 제출 변수명 weather를 유지합니다.
 const weather = computed(
-  () =>
-    weatherStore.weatherList.find(
-      (item) => item.slug === route.params.id || item.id === route.params.id,
-    ) ?? null,
+  () => weatherStore.weatherList.find((item) => item.id === route.params.id) ?? null,
 )
 const isPrimary = computed(() => configStore.primaryLocationKey === weather.value?.id)
 const weatherEmoji = computed(() => getWeatherEmoji(weather.value ?? {}))
@@ -50,20 +48,6 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
     timeZone: 'UTC',
   }).format(new Date(timestamp + timezoneOffset * 1000))
 }
-
-const syncWeatherRoute = async (routeId) => {
-  configStore.hydrate()
-  weatherStore.hydrate()
-
-  if (!weather.value) return
-
-  // 좌표 Key가 포함된 기존 북마크는 대응하는 읽기 쉬운 slug URL로 교체합니다.
-  if (weather.value.slug && routeId !== weather.value.slug) {
-    await router.replace({ name: 'detail', params: { id: weather.value.slug } })
-  }
-}
-
-watch(() => route.params.id, syncWeatherRoute, { immediate: true })
 </script>
 
 <template>

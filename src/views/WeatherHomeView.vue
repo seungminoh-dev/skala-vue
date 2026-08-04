@@ -75,8 +75,20 @@ const dashboardSummary = computed(() => {
 
 const formatNumber = (value, unit) =>
   value === null || value === undefined ? '정보 없음' : `${value}${unit}`
-const formatVisibility = (value) =>
-  value === null || value === undefined ? '정보 없음' : `${(value / 1000).toFixed(1)}km`
+const formatWind = (speed, degree) => {
+  const wind = []
+  if (speed !== null && speed !== undefined) wind.push(`${speed}m/s`)
+  if (degree !== null && degree !== undefined) wind.push(`${degree}°`)
+
+  return wind.join(' · ') || '정보 없음'
+}
+const formatPrecipitation = (rain, snow) => {
+  const precipitation = []
+  if (rain > 0) precipitation.push(`비 ${rain}mm`)
+  if (snow > 0) precipitation.push(`눈 ${snow}mm`)
+
+  return precipitation.join(' · ') || '없음'
+}
 const formatTime = (timestamp, timezoneOffset = 0) => {
   if (!timestamp) return '정보 없음'
 
@@ -102,7 +114,7 @@ const selectRegisteredCity = (city) => {
   }
 }
 const showDetail = (city) => {
-  router.push({ name: 'detail', params: { id: city.slug ?? city.id } })
+  router.push({ name: 'detail', params: { id: city.id } })
 }
 const removeCity = (city) => {
   weatherStore.removeLocation(city.id)
@@ -177,12 +189,14 @@ watchEffect(() => {
             <dd>{{ formatNumber(primaryWeather.humidity, '%') }}</dd>
           </div>
           <div>
-            <dt><span aria-hidden="true">↝</span> 풍속</dt>
-            <dd>{{ formatNumber(primaryWeather.windSpeed, 'm/s') }}</dd>
+            <dt><span aria-hidden="true">↝</span> 바람</dt>
+            <dd>{{ formatWind(primaryWeather.windSpeed, primaryWeather.windDegree) }}</dd>
           </div>
           <div>
-            <dt><span aria-hidden="true">◉</span> 가시거리</dt>
-            <dd>{{ formatVisibility(primaryWeather.visibility) }}</dd>
+            <dt><span aria-hidden="true">☂</span> 강수 / 적설</dt>
+            <dd>
+              {{ formatPrecipitation(primaryWeather.rainLastHour, primaryWeather.snowLastHour) }}
+            </dd>
           </div>
           <div>
             <dt><span aria-hidden="true">◒</span> 일몰</dt>

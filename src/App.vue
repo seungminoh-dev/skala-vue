@@ -1,4 +1,4 @@
-<!-- AI GENERATED CODE: 단순 Refresh 규칙을 실행하는 전역 Weather App Shell입니다. -->
+<!-- AI GENERATED CODE: 영문 도시 id와 단순 Refresh 규칙을 사용하는 Weather App Shell입니다. -->
 <script setup>
 import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
@@ -22,9 +22,7 @@ const primaryWeather = computed(
 const canvasWeather = computed(() => {
   if (route.name === 'detail') {
     return (
-      weatherStore.weatherList.find(
-        (item) => item.slug === route.params.id || item.id === route.params.id,
-      ) ?? primaryWeather.value
+      weatherStore.weatherList.find((item) => item.id === route.params.id) ?? primaryWeather.value
     )
   }
 
@@ -73,11 +71,6 @@ onMounted(async () => {
     <main class="app-container">
       <RouterView />
     </main>
-
-    <footer class="app-footer weather-surface">
-      <span>SKALA VUE3-JS HW - Weather Service(260805)</span>
-      <a href="https://openweathermap.org/" target="_blank" rel="noreferrer">Data by OpenWeather</a>
-    </footer>
   </div>
 </template>
 

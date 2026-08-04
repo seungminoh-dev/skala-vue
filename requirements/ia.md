@@ -21,7 +21,7 @@ flowchart TD
   OUTLET["RouterView"]
 
   HOME["/ · WeatherHomeView"]
-  DETAIL["/weather/:id · WeatherDetailView<br/>id 값은 Location slug"]
+  DETAIL["/weather/:id · WeatherDetailView<br/>id 값은 영문 도시명"]
   ABOUT["/about · WeatherAboutView"]
   ERROR["Catch-all · NotFoundView"]
 
@@ -78,7 +78,7 @@ Weather Board
 │   ├── 도시 추가
 │   ├── 현재 선택 상태
 │   └── Weather Card Grid
-│       └── Weather Report                       /weather/:id (예: /weather/seoul-kr)
+│       └── Weather Report                       /weather/:id (예: /weather/seoul)
 ├── About                                        /about
 └── Not Found                                    /:pathMatch(.*)*
 ```
@@ -88,7 +88,7 @@ Weather Board
 ### Weather Home
 
 1. 메인 지역의 현재 온도·상태와 Unicode 날씨 기호
-2. 습도·풍속·가시거리·일몰을 담은 Glass Metric Strip
+2. 습도·바람(풍속·풍향)·강수/적설·일몰을 담은 Glass Metric Strip
 3. 도시 필터와 도시 추가
 4. 선택 상태
 5. 메인 지역 우선 Weather Card Grid
@@ -126,7 +126,7 @@ Weather Board
 | Home     | `SearchBar`             | 네이티브 `:value/@input` 한글 검색                      |
 | Home     | `CityRegistrationModal` | OpenWeather Geocoding 검색과 도시 등록                  |
 | Home     | `WeatherCard`           | 요약·선택·삭제·상세 이동·단위 표시                      |
-| Detail   | `WeatherDetailView`     | Route slug로 실제 날씨 조회·단위 표시                   |
+| Detail   | `WeatherDetailView`     | 영문 도시명 id로 실제 날씨 조회·단위 표시               |
 | Data     | `weatherStore`          | 날씨 배열 저장, 도시 등록, 자동·수동 Refresh            |
 | Data     | `config.js`             | `useConfigStore`로 메인 지역, 단위, 테마 영속화         |
 | Visual   | `weatherVisuals`        | OpenWeather 상태를 임시 Unicode 날씨 기호로 변환        |
@@ -159,16 +159,16 @@ sequenceDiagram
   Home-->>User: 선택 상태 표시
   User->>Card: 상세 보기
   Card-->>Home: click-detail(city), 버블링 중단
-  Home->>Detail: /weather/:id (사람이 읽는 slug)
-  Detail->>Store: slug로 localStorage 날씨 배열 조회
+  Home->>Detail: /weather/:id (영문 도시명 id)
+  Detail->>Store: id로 localStorage 날씨 배열 조회
 ```
 
 ## 6. Location 식별자 원칙
 
-- `id`: 새 등록 항목에 발급하는 내부 UUID입니다. 선택·삭제·메인 지역 연결에 사용합니다.
-- `slug`: `seoul-kr`처럼 영문 도시명과 국가 코드로 만든 URL 식별자입니다.
-- 같은 slug가 생기면 좌표 원문을 노출하지 않는 짧은 fingerprint를 뒤에 붙여 충돌을 피합니다.
-- 기존 좌표 Key 상세 URL은 같은 도시의 slug URL로 자동 교체해 저장된 북마크를 호환합니다.
+- 영문 도시명을 소문자와 `-` 형식으로 정리한 값을 `id`와 상세 URL에 함께 사용합니다.
+- `id`가 24자를 넘으면 앞 24자만 사용합니다.
+- 영문 도시명이 없을 때만 OpenWeather 도시 ID를 사용합니다.
+- 도시명 중복과 잘림으로 인한 충돌은 현재 범위에서 별도로 처리하지 않습니다.
 
 ## 7. API Refresh 원칙
 
