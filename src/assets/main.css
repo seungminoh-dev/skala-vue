@@ -1,45 +1,101 @@
+/* AI GENERATED CODE: Weather Dashboard의 Element Plus 공통 Surface와 상호작용 규칙입니다. */
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  min-height: 100vh;
+}
+
+.route-card {
   width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  min-width: 0;
 }
 
-.practice-card {
-  margin-bottom: 1rem;
-  padding: 1.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-background-soft);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+.el-card.route-card {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+.route-card > .el-card__header,
+.route-card > .el-card__body {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+.route-card > .el-card__header {
+  margin-bottom: 1.5rem;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.el-card {
+  border-color: var(--border-subtle);
+  background: var(--surface-raised);
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+.el-button {
+  min-height: 40px;
+  padding-inline: 1rem;
+  border-radius: var(--weather-radius-control);
+  font-weight: 700;
+  transition:
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.el-button:active {
+  transform: translateY(1px);
+}
+
+.el-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.el-button--primary.is-plain {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.el-tag {
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.el-alert {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--weather-radius-control);
+  background: var(--surface-raised);
+}
+
+.el-dialog {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--weather-radius-surface);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
+}
+
+/* AI CODE: 모든 Weather 화면이 공유하는 Glass Surface primitive입니다. */
+.weather-surface.weather-surface {
+  border: 1px solid var(--weather-panel-border);
+  background: var(--weather-panel);
+  box-shadow: var(--weather-shadow-surface);
+  backdrop-filter: var(--weather-backdrop);
+}
+
+.el-alert.weather-surface .el-alert__title {
+  color: var(--weather-on-panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

@@ -1,0 +1,170 @@
+<!-- AI GENERATED CODE: 현재 Weather Canvas 구현에 맞춰 정보 구조와 시각 계층을 동기화했습니다. -->
+
+# Weather Board IA
+
+> 실제 OpenWeather 데이터, Pinia 설정, 등록 지역 Grid를 기준으로 정리한 현재 정보 구조입니다.
+
+## 1. 서비스 구조
+
+```mermaid
+flowchart TD
+  APP["Weather Canvas · 최대 1120px"]
+  BACKGROUND["날씨별 Full Viewport 배경"]
+  HEADER["Unified Service Bar"]
+  NAV["Weather · About"]
+  SETTINGS["SettingsToolbar"]
+  PRIMARY["메인 지역"]
+  CURRENT["내 위치"]
+  UNIT["UnitToggler · °C/°F"]
+  THEME["ThemeModeToggle · Bright/Dark"]
+  OUTLET["RouterView"]
+
+  HOME["/ · WeatherHomeView"]
+  DETAIL["/weather/:id · WeatherDetailView"]
+  ABOUT["/about · WeatherAboutView"]
+  ERROR["Catch-all · NotFoundView"]
+
+  SEARCH["SearchBar · 등록 도시 필터"]
+  REGISTER["CityRegistrationModal"]
+  GRID["WeatherCard Grid"]
+  STATUS["선택 상태"]
+  WEATHER_STORE["weatherStore"]
+  CONFIG_STORE["configStore"]
+  STORAGE["localStorage"]
+  API["OpenWeather Current Weather"]
+
+  APP --> HEADER
+  APP --> BACKGROUND
+  HEADER --> NAV
+  HEADER --> SETTINGS
+  SETTINGS --> PRIMARY
+  SETTINGS --> CURRENT
+  SETTINGS --> UNIT
+  SETTINGS --> THEME
+  APP --> OUTLET
+  OUTLET --> HOME
+  OUTLET --> DETAIL
+  OUTLET --> ABOUT
+  OUTLET --> ERROR
+  HOME --> SEARCH
+  HOME --> REGISTER
+  HOME --> GRID
+  HOME --> STATUS
+  GRID -->|상세 보기| DETAIL
+  PRIMARY --> CONFIG_STORE
+  UNIT --> CONFIG_STORE
+  THEME --> CONFIG_STORE
+  CURRENT --> WEATHER_STORE
+  REGISTER --> WEATHER_STORE
+  WEATHER_STORE --> API
+  WEATHER_STORE <--> STORAGE
+  CONFIG_STORE <--> STORAGE
+```
+
+## 2. 사이트맵
+
+```text
+Weather Board
+├── Global Settings
+│   ├── 메인 지역
+│   ├── 내 위치 등록
+│   ├── 섭씨 / 화씨
+│   └── Bright / Dark
+├── Weather                                      /
+│   ├── 등록 도시 검색
+│   ├── 도시 추가
+│   ├── 현재 선택 상태
+│   └── Weather Card Grid
+│       └── Weather Report                       /weather/:id
+├── About                                        /about
+└── Not Found                                    /:pathMatch(.*)*
+```
+
+## 3. 화면별 정보 계층
+
+### Weather Home
+
+1. 메인 지역의 현재 온도·상태와 Unicode 날씨 기호
+2. 습도·풍속·가시거리·일몰을 담은 Glass Metric Strip
+3. 도시 필터와 도시 추가
+4. 선택·갱신·오류 상태
+5. 메인 지역 우선 Weather Card Grid
+   - 도시와 지역
+   - 현재·체감 온도
+   - 습도·풍속·구름량
+   - 25도 기준 과제 라벨
+   - 마지막 갱신과 만료 상태
+   - 삭제와 상세 이동
+
+### Weather Detail
+
+1. 메인 지역 여부, 도시, 설명, 관측 시각
+2. 현재·체감 온도와 날씨 아이콘
+3. 습도·풍속·기압·가시거리 Metric Grid
+4. 관측 온도 범위, 풍향·돌풍, 구름, 강수·적설, 일출·일몰
+5. 마지막 정상 데이터 갱신 상태
+
+### About
+
+1. 서비스 목적
+2. 내 위치·안전한 Cache·개인화 기능
+3. localStorage 데이터 정책
+
+## 4. 컴포넌트 책임
+
+| 영역     | 컴포넌트/모듈           | 책임                                                    |
+| -------- | ----------------------- | ------------------------------------------------------- |
+| App      | `App.vue`               | 날씨 배경 전환, Floating Navigation, RouterView, Footer |
+| Settings | `SettingsToolbar`       | 메인 지역·내 위치·단위·테마 통합 배치                   |
+| Settings | `UnitToggler`           | 섭씨/화씨 설정 변경                                     |
+| Settings | `ThemeModeToggle`       | Bright/Dark 설정 변경                                   |
+| Home     | `WeatherHomeView`       | 모든 반응형 검색·선택·목록·이동 상태 유지               |
+| Home     | `BaseDashboardCard`     | Slot 기반 공통 Surface                                  |
+| Home     | `SearchBar`             | 네이티브 `:value/@input` 한글 검색                      |
+| Home     | `CityRegistrationModal` | 국내 저장 좌표·해외 Geocoding 도시 등록                 |
+| Home     | `WeatherCard`           | 요약·선택·삭제·상세 이동·단위 표시                      |
+| Detail   | `WeatherDetailView`     | Route ID로 실제 날씨 조회·단위 표시                     |
+| Data     | `weatherStore`          | 등록 지역, Cache, 호출 제한, API 동기화                 |
+| Data     | `configStore`           | 메인 지역, 단위, 테마 영속화                            |
+| Visual   | `weatherVisuals`        | OpenWeather 상태를 임시 Unicode 날씨 기호로 변환        |
+| Style    | `base.css`              | 레이아웃·색상·반경·Surface 디자인 토큰                  |
+| Style    | `main.css`              | Element Plus 공통 규칙과 `weather-surface` primitive    |
+
+## 5. 핵심 사용자 흐름
+
+```mermaid
+sequenceDiagram
+  actor User as 사용자
+  participant Toolbar as SettingsToolbar
+  participant Home as WeatherHomeView
+  participant Store as Pinia Stores
+  participant API as OpenWeather
+  participant Card as WeatherCard
+  participant Detail as WeatherDetailView
+
+  User->>Toolbar: 내 위치 또는 등록 도시를 메인 지역으로 설정
+  Toolbar->>Store: 위치·설정 저장
+  Store->>API: 만료된 현재 날씨만 요청
+  API-->>Store: Current Weather JSON
+  Store-->>Home: 메인 지역 우선 weatherList
+  User->>Card: 카드 선택
+  Card-->>Home: select-card(city)
+  Home-->>User: 선택 상태 표시
+  User->>Card: 상세 보기
+  Card-->>Home: click-detail(city), 버블링 중단
+  Home->>Detail: /weather/:id
+  Detail->>Store: ID 조회 및 Cache 갱신
+```
+
+## 6. 레이아웃 원칙
+
+- Weather Canvas의 Header·본문·Footer 최대 너비는 모두 `1120px`입니다.
+- 배경은 메인 지역 또는 상세 지역의 날씨에 따라 맑음·폭염·비·눈 자산을 전환합니다.
+- Navigation과 SettingsToolbar는 하나의 반투명 Service Bar 안에서 같은 시각 계층을 사용합니다.
+- Service Bar는 Desktop에서 Sticky로 설정 접근성을 유지하고, Tablet·Mobile에서는 문서 흐름에 배치합니다.
+- Weather Grid는 Desktop 3열, Tablet 2열, Mobile 1열입니다.
+- 날씨 정보는 어두운 Glass Card로 묶고, 배경 위에서도 읽히도록 충분한 Overlay와 대비를 둡니다.
+- Glass Surface의 배경·테두리·그림자·Blur는 전역 `weather-surface` primitive로 관리합니다.
+- 전문 아이콘 자산을 도입하기 전에는 `weatherVisuals.js`의 Unicode 기호를 일관되게 사용합니다.
+- Route에 관계없이 Header·본문·Footer의 좌우 기준선을 유지합니다.
+- Bright/Dark와 °C/°F는 메인과 상세에 동시에 적용합니다.

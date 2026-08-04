@@ -37,3 +37,8 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# 이거 GIT에 업로드 되면 안됩니다.
+.env
+.env.*
+!.env.example

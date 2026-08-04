@@ -1,51 +1,107 @@
-/* color palette from <https://github.com/vuejs/theme> */
+/* AI GENERATED CODE: 몰입형 배경과 Glass Surface 기반 Weather Canvas 디자인 토큰입니다. */
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  color-scheme: light;
+  --font-family-system:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  --layout-max-width: 1120px;
+  --layout-gutter: clamp(1rem, 3vw, 2rem);
+  --layout-edge-space: clamp(2rem, 6vw, 4rem);
+  --page-background: #18334d;
+  --surface-raised: #ffffff;
+  --surface-muted: #f3f6f9;
+  --text-primary: #162033;
+  --text-secondary: #536176;
+  --text-tertiary: #76859a;
+  --border-subtle: #dce5ed;
+  --border-strong: #c6d3df;
+  --accent: #2878d0;
+  --accent-strong: #145ea8;
+  --accent-soft: #e6f1fb;
+  --focus-ring: #0b75d1;
+  --success: #18865b;
+  --warning: #b86a06;
+  --danger: #c53c3c;
+  --condition-clear: #e9a23b;
+  --condition-clouds: #73869a;
+  --condition-rain: #3783ca;
+  --condition-snow: #6ba3bd;
+  --condition-thunder: #7659a8;
+  --condition-mist: #7a8d98;
+  --shadow-control: 0 1px 3px rgb(22 32 51 / 12%);
+  --shadow-overlay: 0 16px 36px rgb(31 54 79 / 14%);
+  --weather-panel: rgb(14 40 61 / 78%);
+  --weather-panel-strong: rgb(11 31 49 / 88%);
+  --weather-panel-soft: rgb(255 255 255 / 13%);
+  --weather-panel-border: rgb(255 255 255 / 22%);
+  --weather-on-panel: #ffffff;
+  --weather-on-panel-muted: rgb(255 255 255 / 74%);
+  --weather-on-panel-faint: rgb(255 255 255 / 56%);
+  --weather-accent-text: #d7ecff;
+  --weather-radius-control: 10px;
+  --weather-radius-surface: 20px;
+  --weather-radius-hero: 24px;
+  --weather-shadow-surface: 0 18px 48px rgb(4 17 29 / 20%);
+  --weather-shadow-hover: 0 24px 56px rgb(4 17 29 / 28%);
+  --weather-backdrop: blur(18px) saturate(120%);
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
-
-  --vt-c-indigo: #2c3e50;
-
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
-
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
-
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
-  --section-gap: 160px;
+  --el-font-family: var(--font-family-system);
+  --el-color-primary: var(--accent);
+  --el-color-primary-light-3: #5d9bdc;
+  --el-color-primary-light-5: #8eb8e4;
+  --el-color-primary-light-7: #bfd7ee;
+  --el-color-primary-light-8: #d4e5f5;
+  --el-color-primary-light-9: var(--accent-soft);
+  --el-color-primary-dark-2: var(--accent-strong);
+  --el-color-success: var(--success);
+  --el-color-warning: var(--warning);
+  --el-color-danger: var(--danger);
+  --el-bg-color: var(--surface-raised);
+  --el-bg-color-overlay: var(--surface-raised);
+  --el-fill-color-blank: var(--surface-raised);
+  --el-fill-color-light: var(--surface-muted);
+  --el-fill-color-lighter: var(--surface-muted);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-tertiary);
+  --el-border-color: var(--border-strong);
+  --el-border-color-light: var(--border-subtle);
+  --el-border-radius-base: 10px;
+  --el-border-radius-round: 9999px;
 }
 
 :root[data-theme='dark'] {
-  --color-background: var(--vt-c-black);
-  --color-background-soft: var(--vt-c-black-soft);
-  --color-background-mute: var(--vt-c-black-mute);
+  color-scheme: dark;
+  --page-background: #0c1420;
+  --surface-raised: #162233;
+  --surface-muted: #1d2b3e;
+  --text-primary: #f4f7fb;
+  --text-secondary: #bac6d5;
+  --text-tertiary: #8fa0b5;
+  --border-subtle: #2a3b50;
+  --border-strong: #3a4d63;
+  --accent: #5ca9ed;
+  --accent-strong: #8bc5f6;
+  --accent-soft: #183a58;
+  --focus-ring: #79bdf7;
+  --success: #4bc193;
+  --warning: #e6a951;
+  --danger: #ef7777;
+  --shadow-control: 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-overlay: 0 18px 40px rgb(0 0 0 / 30%);
+  --weather-panel: rgb(7 19 31 / 84%);
+  --weather-panel-strong: rgb(5 14 24 / 92%);
+  --weather-panel-soft: rgb(255 255 255 / 10%);
+  --weather-panel-border: rgb(255 255 255 / 18%);
+  --el-color-primary-light-3: #79b7ed;
+  --el-color-primary-light-5: #9acaf3;
+  --el-color-primary-light-7: #254b6d;
+  --el-color-primary-light-8: #1f405e;
+  --el-color-primary-light-9: var(--accent-soft);
+  --el-color-primary-dark-2: var(--accent-strong);
+}
 
-  --color-border: var(--vt-c-divider-dark-2);
-  --color-border-hover: var(--vt-c-divider-dark-1);
-
-  --color-heading: var(--vt-c-text-dark-1);
-  --color-text: var(--vt-c-text-dark-2);
+html {
+  scrollbar-gutter: stable;
 }
 
 *,
@@ -53,32 +109,27 @@
 *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
 }
 
 body {
+  min-width: 320px;
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
-  line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
-  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--page-background);
+  font-family: var(--font-family-system);
+  font-size: 16px;
+  line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
 }
