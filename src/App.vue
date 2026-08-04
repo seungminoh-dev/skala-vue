@@ -1,17 +1,19 @@
-<!-- AI GENERATED CODE: 영문 도시 id와 단순 Refresh 규칙을 사용하는 Weather App Shell입니다. -->
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import SettingsToolbar from '@/components/SettingsToolbar.vue'
 /* Pinia Store -> Config(설정), Weather(날씨) */
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
-import { resolveWeatherCanvas } from '@/utils/weatherBackground.js' // 현재 정보를 판단하여 배경을 반환해주는 유틸
+import { resolveWeatherCanvas } from '@/utils/weatherVisuals.js'
 
 const route = useRoute()
 /* Pinia Store */
 const configStore = useConfigStore()
 const weatherStore = useWeatherStore()
+const isHeaderHidden = ref(false)
+let previousScrollY = 0
+let scrollFrameId = null
 const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path)) // 세부 날씨 사이트는 RouteLink에 없으므로 UI보정용
 const primaryWeather = computed(
   () =>
@@ -33,21 +35,57 @@ const canvasStyle = computed(() => ({
   '--weather-background-image': `url("${weatherCanvas.value.background}")`,
 }))
 
+// AI CODE: Auto Hide Header 구현
+const updateAutoHideHeader = () => {
+  const currentScrollY = window.scrollY
+  const scrollDistance = currentScrollY - previousScrollY
+
+  if (currentScrollY < 80) {
+    isHeaderHidden.value = false
+  } else if (Math.abs(scrollDistance) > 6) {
+    isHeaderHidden.value = scrollDistance > 0
+  }
+
+  previousScrollY = currentScrollY
+  scrollFrameId = null
+}
+
+const handleHeaderScroll = () => {
+  if (scrollFrameId !== null) return
+  scrollFrameId = window.requestAnimationFrame(updateAutoHideHeader)
+}
+
+const startAutoHideHeader = () => {
+  previousScrollY = window.scrollY
+  window.addEventListener('scroll', handleHeaderScroll, { passive: true })
+}
+
+const stopAutoHideHeader = () => {
+  window.removeEventListener('scroll', handleHeaderScroll)
+
+  if (scrollFrameId !== null) {
+    window.cancelAnimationFrame(scrollFrameId)
+  }
+}
+
 onMounted(async () => {
   configStore.hydrate()
   weatherStore.hydrate()
+  startAutoHideHeader()
   await weatherStore.refreshStaleWeather()
 })
+
+onBeforeUnmount(stopAutoHideHeader)
 </script>
 
 <template>
   <div class="app-shell" :class="weatherCanvas.tone" :style="canvasStyle">
-    <header class="app-header">
+    <header class="app-header" :class="{ 'is-hidden': isHeaderHidden }">
       <div class="header-inner weather-surface">
         <div class="brand-navigation">
           <RouterLink class="brand" :to="{ name: 'home' }" aria-label="Weather Board 홈">
             <span class="brand-mark" aria-hidden="true">☁</span>
-            <span>Weather Board</span>
+            <span>오늘의 날씨</span>
           </RouterLink>
 
           <nav class="main-nav" aria-label="주요 메뉴">
@@ -59,7 +97,7 @@ onMounted(async () => {
               :class="{ 'is-active': activeMenu === '/about' }"
               to="/about"
             >
-              사이트 정보
+              도움말
             </RouterLink>
           </nav>
         </div>
@@ -119,6 +157,19 @@ onMounted(async () => {
   z-index: 30;
   top: 0;
   padding-top: 0.75rem;
+  pointer-events: none;
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
+  will-change: opacity, transform;
+}
+
+.app-header.is-hidden:not(:focus-within) {
+  opacity: 0;
+  transform: translateY(calc(-100% - 0.75rem));
+}
+
+.app-header.is-hidden:not(:focus-within) .header-inner {
   pointer-events: none;
 }
 
@@ -199,7 +250,7 @@ onMounted(async () => {
 .app-container {
   width: min(calc(100% - var(--layout-edge-space)), var(--layout-max-width));
   margin: 0 auto;
-  padding: clamp(1.5rem, 3vw, 2.5rem) 0 3rem;
+  padding: clamp(0.75rem, 1vw, 1rem) 0 2.5rem;
 }
 
 .app-footer {
@@ -224,6 +275,8 @@ onMounted(async () => {
   .app-header {
     position: relative;
     padding-top: var(--layout-gutter);
+    opacity: 1;
+    transform: none;
   }
 
   .header-inner {

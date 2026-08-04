@@ -1,7 +1,8 @@
 <!-- AI GENERATED CODE: 내 위치·메인 지역·온도 단위·화면 모드를 한곳에서 제어하는 설정 Toolbar입니다. -->
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElOption, ElSelect } from 'element-plus'
+import { Aim, Refresh } from '@element-plus/icons-vue'
+import { ElButton, ElMessage, ElOption, ElSelect, ElTooltip } from 'element-plus'
 import ThemeModeToggle from '@/components/ThemeModeToggle.vue'
 import UnitToggler from '@/components/UnitToggler.vue'
 import { useConfigStore } from '@/stores/config.js'
@@ -125,47 +126,56 @@ onMounted(() => {
 
 <template>
   <aside class="settings-toolbar" aria-label="날씨 서비스 설정">
-    <div class="setting-group primary-location-setting">
-      <span class="setting-label">메인 지역</span>
-      <ElSelect
-        v-model="primaryLocationKey"
-        class="location-select"
-        placeholder="등록 도시 없음"
-        aria-label="메인 지역 선택"
-        :disabled="locationOptions.length === 0"
-      >
-        <ElOption
-          v-for="location in locationOptions"
-          :key="location.id"
-          :label="location.name"
-          :value="location.id"
-        />
-      </ElSelect>
+    <div class="toolbar-settings">
+      <div class="setting-group primary-location-setting">
+        <span class="setting-label">메인 지역</span>
+        <ElSelect
+          v-model="primaryLocationKey"
+          class="location-select"
+          placeholder="등록 도시 없음"
+          aria-label="메인 지역 선택"
+          :disabled="locationOptions.length === 0"
+        >
+          <ElOption
+            v-for="location in locationOptions"
+            :key="location.id"
+            :label="location.name"
+            :value="location.id"
+          />
+        </ElSelect>
+      </div>
+
+      <div class="setting-group compact-setting">
+        <span class="setting-label">단위</span>
+        <UnitToggler />
+      </div>
     </div>
 
-    <ElButton class="location-button" :loading="isLocating" plain @click="registerCurrentLocation">
-      <span aria-hidden="true">⌖</span>
-      내 위치
-    </ElButton>
+    <div class="toolbar-actions" role="group" aria-label="빠른 설정">
+      <ElTooltip content="내 위치 등록" placement="bottom" :show-after="300">
+        <ElButton
+          class="toolbar-icon-button"
+          :loading="isLocating"
+          plain
+          aria-label="내 위치 등록"
+          @click="registerCurrentLocation"
+        >
+          <Aim class="action-icon" aria-hidden="true" />
+        </ElButton>
+      </ElTooltip>
 
-    <ElButton
-      class="location-button refresh-button"
-      :loading="isRefreshing"
-      plain
-      aria-label="전체 날씨 새로고침"
-      @click="refreshAllWeather"
-    >
-      <span aria-hidden="true">↻</span>
-      새로고침
-    </ElButton>
+      <ElTooltip content="전체 날씨 새로고침" placement="bottom" :show-after="300">
+        <ElButton
+          class="toolbar-icon-button"
+          :loading="isRefreshing"
+          plain
+          aria-label="전체 날씨 새로고침"
+          @click="refreshAllWeather"
+        >
+          <Refresh class="action-icon" aria-hidden="true" />
+        </ElButton>
+      </ElTooltip>
 
-    <div class="setting-group compact-setting">
-      <span class="setting-label">단위</span>
-      <UnitToggler />
-    </div>
-
-    <div class="setting-group compact-setting">
-      <span class="setting-label">화면</span>
       <ThemeModeToggle />
     </div>
   </aside>
@@ -177,8 +187,24 @@ onMounted(() => {
   flex: 1;
   align-items: flex-end;
   justify-content: flex-end;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.toolbar-settings,
+.toolbar-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.toolbar-settings {
   gap: 0.65rem;
   min-width: 0;
+}
+
+.toolbar-actions {
+  flex: none;
+  gap: 0.5rem;
 }
 
 .setting-group {
@@ -210,20 +236,35 @@ onMounted(() => {
   color: var(--weather-on-panel);
 }
 
-.location-button {
+.toolbar-icon-button {
+  width: 40px;
+  height: 40px;
   min-height: 40px;
+  margin: 0;
+  padding: 0;
   border-color: var(--weather-panel-border);
   border-radius: var(--weather-radius-control);
   background: var(--weather-panel-soft);
   color: var(--weather-on-panel);
 }
 
+.toolbar-icon-button:hover,
+.toolbar-icon-button:focus-visible {
+  border-color: rgb(255 255 255 / 38%);
+  background: var(--weather-panel-strong);
+  color: var(--weather-on-panel);
+}
+
+.action-icon {
+  width: 17px;
+  height: 17px;
+}
+
 @media (max-width: 1023px) {
   .settings-toolbar {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
     padding-top: 0.65rem;
-    overflow-x: auto;
     border-top: 1px solid var(--weather-panel-border);
   }
 }
@@ -231,9 +272,19 @@ onMounted(() => {
 @media (max-width: 479px) {
   .settings-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: end;
-    overflow: visible;
+    gap: 0.65rem;
+  }
+
+  .toolbar-settings {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .toolbar-actions {
+    justify-self: end;
   }
 
   .primary-location-setting {

@@ -77,7 +77,11 @@ const registerCandidate = async (candidate) => {
 
 <template>
   <div class="city-registration">
-    <ElButton class="city-add-button" type="primary" @click="openDialog">+ 도시 추가</ElButton>
+    <button class="city-add-card" type="button" @click="openDialog">
+      <span class="add-card-icon" aria-hidden="true">+</span>
+      <strong>도시 추가</strong>
+      <span>새 지역을 검색해 등록하세요</span>
+    </button>
 
     <ElDialog
       v-model="dialogVisible"
@@ -157,8 +161,66 @@ const registerCandidate = async (candidate) => {
 
 <style scoped>
 .city-registration {
-  display: flex;
-  justify-content: flex-end;
+  min-width: 0;
+  height: 100%;
+}
+
+.city-add-card {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: 2rem 1.25rem;
+  border: 2px dashed var(--weather-panel-border);
+  border-radius: var(--weather-radius-surface);
+  background: var(--weather-panel-strong);
+  box-shadow: var(--weather-shadow-surface);
+  color: var(--weather-on-panel);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.city-add-card:hover {
+  border-color: var(--weather-accent-text);
+  transform: translateY(-3px);
+  box-shadow: var(--weather-shadow-hover);
+}
+
+.city-add-card:focus-visible {
+  outline: 3px solid rgb(255 255 255 / 90%);
+  outline-offset: 2px;
+}
+
+.add-card-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--weather-panel-border);
+  border-radius: 50%;
+  background: var(--weather-panel-soft);
+  color: var(--weather-accent-text);
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1;
+  place-items: center;
+}
+
+.city-add-card strong {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.city-add-card > span:last-child {
+  max-width: 190px;
+  color: var(--weather-on-panel-muted);
+  font-size: 13px;
 }
 
 .registration-content {

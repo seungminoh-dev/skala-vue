@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TD
-  APP["Weather Canvas · 최대 1120px"]
+  APP["Weather Canvas · 최대 1040px"]
   BACKGROUND["날씨별 Full Viewport 배경"]
   HEADER["Unified Service Bar"]
   NAV["Weather · About"]
@@ -129,8 +129,7 @@ Weather Board
 | Detail   | `WeatherDetailView`     | 영문 도시명 id로 실제 날씨 조회·단위 표시               |
 | Data     | `weatherStore`          | 날씨 배열 저장, 도시 등록, 자동·수동 Refresh            |
 | Data     | `config.js`             | `useConfigStore`로 메인 지역, 단위, 테마 영속화         |
-| Visual   | `weatherVisuals`        | OpenWeather 상태를 임시 Unicode 날씨 기호로 변환        |
-| Visual   | `weatherBackground`     | 날씨 상태·온도를 Canvas 배경과 Tone으로 변환            |
+| Visual   | `weatherVisuals`        | 날씨 상태를 Unicode 기호·Canvas 배경·Tone으로 변환      |
 | Style    | `base.css`              | 레이아웃·색상·반경·Surface 디자인 토큰                  |
 | Style    | `main.css`              | Element Plus 공통 규칙과 `weather-surface` primitive    |
 
@@ -180,10 +179,10 @@ sequenceDiagram
 
 ## 8. 레이아웃 원칙
 
-- Weather Canvas의 Header·본문·Footer 최대 너비는 모두 `1120px`입니다.
+- Weather Canvas의 Header·본문·Footer 최대 너비는 모두 `1040px`입니다.
 - 배경은 메인 지역 또는 상세 지역의 날씨에 따라 맑음·폭염·비·눈 자산을 전환합니다.
 - Navigation과 SettingsToolbar는 하나의 반투명 Service Bar 안에서 같은 시각 계층을 사용합니다.
-- Service Bar는 Desktop에서 Sticky로 설정 접근성을 유지하고, Tablet·Mobile에서는 문서 흐름에 배치합니다.
+- Service Bar는 Desktop에서 아래 스크롤 시 숨고 위 스크롤 시 나타나는 Sticky Header로 동작하며, Tablet·Mobile에서는 문서 흐름에 배치합니다.
 - Weather Grid는 Desktop 3열, Tablet 2열, Mobile 1열입니다.
 - 날씨 정보는 어두운 Glass Card로 묶고, 배경 위에서도 읽히도록 충분한 Overlay와 대비를 둡니다.
 - Glass Surface의 배경·테두리·그림자·Blur는 전역 `weather-surface` primitive로 관리합니다.

@@ -1,7 +1,6 @@
 <!-- AI GENERATED CODE: Essential 이벤트를 보존한 실제 서비스형 Grid 날씨 카드입니다. -->
 <script setup>
 import { computed } from 'vue'
-import { ElPopconfirm } from 'element-plus'
 import { useConfigStore } from '@/stores/config.js'
 import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
 
@@ -20,7 +19,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select-card', 'click-detail', 'remove-city'])
+const emit = defineEmits(['select-card', 'click-detail'])
 const configStore = useConfigStore()
 
 // Essential DAY5: 원본 섭씨값을 설정 단위에 맞게 표시합니다.
@@ -57,7 +56,6 @@ const formatMetric = (value, unit) =>
 const isStale = (fetchedAt) => !fetchedAt || Date.now() - fetchedAt >= 2 * 60 * 60 * 1000
 const selectCard = (city) => emit('select-card', city)
 const clickDetail = (city) => emit('click-detail', city)
-const removeCity = (city) => emit('remove-city', city)
 </script>
 
 <template>
@@ -122,21 +120,9 @@ const removeCity = (city) => emit('remove-city', city)
 
       <footer class="card-footer">
         <span class="updated-at">{{ formatUpdatedAt(city.fetchedAt) }} 업데이트</span>
-        <div class="card-actions">
-          <ElPopconfirm
-            :title="`${city.name}을(를) 목록에서 삭제할까요?`"
-            confirm-button-text="삭제"
-            cancel-button-text="취소"
-            @confirm="removeCity(city)"
-          >
-            <template #reference>
-              <ElButton class="remove-button" text @click.stop>삭제</ElButton>
-            </template>
-          </ElPopconfirm>
-          <ElButton class="detail-button" type="primary" @click.stop="clickDetail(city)">
-            상세 보기
-          </ElButton>
-        </div>
+        <ElButton class="detail-button" type="primary" @click.stop="clickDetail(city)">
+          상세 보기
+        </ElButton>
       </footer>
     </article>
   </ElCard>
@@ -145,13 +131,13 @@ const removeCity = (city) => emit('remove-city', city)
 <style scoped>
 .weather-location-card {
   --condition-color: var(--condition-clear);
-  --card-padding-block: 1.25rem;
-  --card-padding-inline: 1.375rem;
+  --card-padding-block: 1rem;
+  --card-padding-inline: 1.1rem;
 
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border-radius: var(--weather-radius-hero);
+  border-radius: var(--weather-radius-surface);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -215,15 +201,14 @@ const removeCity = (city) => emit('remove-city', city)
   display: flex;
   height: 100%;
   flex-direction: column;
-  gap: 1.125rem;
+  gap: 0.85rem;
 }
 
 .card-header,
 .location-heading,
 .temperature-block,
 .status-row,
-.card-footer,
-.card-actions {
+.card-footer {
   display: flex;
   align-items: center;
 }
@@ -246,7 +231,7 @@ const removeCity = (city) => emit('remove-city', city)
 .city-name {
   overflow: hidden;
   color: var(--weather-on-panel);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -274,19 +259,19 @@ const removeCity = (city) => emit('remove-city', city)
 
 .weather-icon {
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   flex: none;
   border-radius: 50%;
   background: var(--weather-panel-soft);
-  font-size: 34px;
+  font-size: 28px;
   place-items: center;
 }
 
 .temperature-block {
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1.25rem;
+  gap: 1rem;
   padding-block: 0.15rem;
 }
 
@@ -297,7 +282,7 @@ const removeCity = (city) => emit('remove-city', city)
 
 .current-temp {
   color: var(--weather-on-panel);
-  font-size: clamp(2.75rem, 6vw, 3.5rem);
+  font-size: 3rem;
   font-weight: 800;
   line-height: 0.95;
   letter-spacing: -0.06em;
@@ -326,7 +311,7 @@ const removeCity = (city) => emit('remove-city', city)
 
 .weather-metrics div {
   min-width: 0;
-  padding: 0.75rem 0.4rem;
+  padding: 0.6rem 0.35rem;
   text-align: center;
 }
 
@@ -371,7 +356,7 @@ const removeCity = (city) => emit('remove-city', city)
   justify-content: space-between;
   gap: 0.75rem;
   margin-top: auto;
-  padding-top: 0.85rem;
+  padding-top: 0.65rem;
   border-top: 1px solid var(--weather-panel-border);
 }
 
@@ -380,34 +365,17 @@ const removeCity = (city) => emit('remove-city', city)
   line-height: 1.4;
 }
 
-.card-actions {
-  gap: 0.35rem;
-}
-
-.card-actions :deep(.el-button) {
-  min-height: 36px;
+.detail-button {
+  min-height: 34px;
+  min-width: 88px;
   padding-inline: 0.75rem;
   font-size: 12px;
-}
-
-.remove-button {
-  color: var(--weather-on-panel-faint);
 }
 
 @media (max-width: 479px) {
   .weather-location-card {
     --card-padding-block: 1rem;
     --card-padding-inline: 1rem;
-  }
-
-  .card-footer {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .card-actions {
-    width: 100%;
-    justify-content: flex-end;
   }
 }
 </style>

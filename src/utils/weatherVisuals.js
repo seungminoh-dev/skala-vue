@@ -1,24 +1,53 @@
-// AI GENERATED CODE: OpenWeather 상태와 주야간 값을 가벼운 Unicode 날씨 기호로 변환합니다.
+/*
+  날씨 상태를 받아와 이모지, 배경으로 반환해주는 모듈입니다.
+*/
 
+import heatwaveBackground from '@/assets/bg/optimized/heatwave.jpg'
+import rainBackground from '@/assets/bg/optimized/rain.jpg'
+import snowBackground from '@/assets/bg/optimized/snow.jpg'
+import sunnyBackground from '@/assets/bg/optimized/sunny.jpg'
+
+const HEAT_THRESHOLD = 35 // 폭염을 판단하는 온도 기준 상수
+
+// 날씨에 맞는 배경 이미지와 화면 Tone을 반환합니다.
+export const resolveWeatherCanvas = (weather = null) => {
+  const wStatus = String(weather?.statusGroup ?? '').toLocaleLowerCase()
+
+  if (wStatus.includes('snow')) {
+    return { background: snowBackground, tone: 'weather-tone-snow' }
+  }
+
+  if (wStatus.includes('rain') || wStatus.includes('drizzle') || wStatus.includes('thunder')) {
+    return { background: rainBackground, tone: 'weather-tone-rain' }
+  }
+
+  if (Number(weather?.temp) >= HEAT_THRESHOLD) {
+    return { background: heatwaveBackground, tone: 'weather-tone-heat' }
+  }
+
+  return { background: sunnyBackground, tone: 'weather-tone-sunny' }
+}
+
+// 날씨와 주야간 상태에 맞는 Unicode 기호를 반환합니다.
 export const getWeatherEmoji = ({ statusGroup = '', icon = '', temp = null } = {}) => {
-  const normalizedStatus = statusGroup.toLocaleLowerCase()
+  const wStatus = statusGroup.toLocaleLowerCase()
   const isNight = icon.endsWith('n')
 
-  if (normalizedStatus.includes('thunder')) return '⛈️'
-  if (normalizedStatus.includes('drizzle')) return '🌦️'
-  if (normalizedStatus.includes('rain')) return '🌧️'
-  if (normalizedStatus.includes('snow')) return '🌨️'
+  if (wStatus.includes('thunder')) return '⛈️'
+  if (wStatus.includes('drizzle')) return '🌦️'
+  if (wStatus.includes('rain')) return '🌧️'
+  if (wStatus.includes('snow')) return '🌨️'
   if (
-    normalizedStatus.includes('mist') ||
-    normalizedStatus.includes('fog') ||
-    normalizedStatus.includes('haze') ||
-    normalizedStatus.includes('smoke') ||
-    normalizedStatus.includes('dust')
+    wStatus.includes('mist') ||
+    wStatus.includes('fog') ||
+    wStatus.includes('haze') ||
+    wStatus.includes('smoke') ||
+    wStatus.includes('dust')
   ) {
     return '🌫️'
   }
-  if (normalizedStatus.includes('cloud')) return isNight ? '☁️' : '⛅'
+  if (wStatus.includes('cloud')) return isNight ? '☁️' : '⛅'
   if (isNight) return '🌙'
-  if (Number(temp) >= 33) return '🌞'
+  if (Number(temp) >= HEAT_THRESHOLD) return '🌞'
   return '☀️'
 }

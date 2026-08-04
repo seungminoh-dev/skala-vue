@@ -5,10 +5,24 @@ import { getCurrentWeather, searchLocations } from '@/services/openWeatherApi.js
 
 const STORAGE_KEY = 'weather-dashboard:v1'
 
+// API 확장 후보가 비활성화된 동안 기존 localStorage에 남은 필드도 제거합니다.
+// 필드를 다시 사용할 때는 openWeatherApi.js의 매핑과 아래 목록을 함께 변경해야 합니다.
+const INACTIVE_WEATHER_FIELDS = [
+  'providerId',
+  'providerName',
+  'providerCountry',
+  'tempMin',
+  'tempMax',
+  'description',
+  'windGust',
+  'observedAt',
+  'sunrise',
+]
+
 const hasLocalStorage = () => typeof window !== 'undefined' && Boolean(window.localStorage)
 
 const createCityId = (weather) => {
-  const englishName = weather.englishName || weather.providerName || weather.name || ''
+  const englishName = weather.englishName || weather.name || ''
   const normalizedName = String(englishName)
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -16,13 +30,14 @@ const createCityId = (weather) => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-  return (normalizedName || String(weather.providerId || 'city')).slice(0, 24).replace(/-+$/g, '')
+  return (normalizedName || 'city').slice(0, 24).replace(/-+$/g, '')
 }
 
 const withDisplayFields = (weather) => {
   const weatherFields = { ...weather }
   delete weatherFields.key
   delete weatherFields.slug
+  INACTIVE_WEATHER_FIELDS.forEach((field) => delete weatherFields[field])
 
   return {
     ...weatherFields,
@@ -40,7 +55,7 @@ const parseStoredWeatherList = (storedData) => {
   if (Array.isArray(storedData?.registeredLocations)) {
     const migratedWeather = storedData.registeredLocations.map((location) => ({
       ...location,
-      ...(storedData.weatherByKey?.[location.key] ?? {}),
+      ...storedData.weatherByKey?.[location.key],
     }))
 
     return migratedWeather.map(withDisplayFields)
@@ -95,19 +110,12 @@ export const useWeatherStore = defineStore('weather', {
       this.hydrate()
 
       const currentWeather = await getCurrentWeather(candidate)
-      const name =
-        candidate.source === 'geolocation'
-          ? currentWeather.providerName || candidate.name
-          : candidate.name
-      const englishName =
-        candidate.source === 'geolocation'
-          ? currentWeather.providerName || candidate.englishName || candidate.name
-          : candidate.englishName || candidate.name
-      const country = candidate.country || currentWeather.providerCountry || ''
-      const location = {
+      const name = candidate.name
+      const englishName = candidate.englishName || candidate.name
+      const country = candidate.country || ''
+      const location = withDisplayFields({
         ...candidate,
         ...currentWeather,
-        id: createCityId({ ...candidate, ...currentWeather, name, englishName }),
         name,
         englishName,
         country,
@@ -115,7 +123,7 @@ export const useWeatherStore = defineStore('weather', {
         lon: Number(candidate.lon),
         region: [candidate.state, country].filter(Boolean).join(' · '),
         addedAt: Date.now(),
-      }
+      })
 
       this.weatherList.push(location)
       this.persist()
@@ -128,10 +136,10 @@ export const useWeatherStore = defineStore('weather', {
       if (index === -1) throw new Error('등록된 도시를 찾을 수 없습니다.')
 
       const currentWeather = await getCurrentWeather(this.weatherList[index])
-      this.weatherList[index] = {
+      this.weatherList[index] = withDisplayFields({
         ...this.weatherList[index],
         ...currentWeather,
-      }
+      })
       this.persist()
 
       return this.weatherList[index]

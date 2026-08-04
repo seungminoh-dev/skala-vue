@@ -64,7 +64,7 @@ const features = [
 
 <style scoped>
 .about-hero {
-  padding: clamp(2rem, 7vw, 4.5rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
   border-radius: var(--weather-radius-hero);
 }
 
@@ -78,7 +78,7 @@ const features = [
 h1 {
   margin-top: 0.75rem;
   color: var(--weather-on-panel);
-  font-size: clamp(2.25rem, 7vw, 4.5rem);
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
   font-weight: 850;
   line-height: 1.03;
   letter-spacing: -0.055em;
@@ -92,7 +92,7 @@ h1 {
 }
 
 .feature-section {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .feature-section > h2 {
@@ -113,7 +113,7 @@ h1 {
 }
 
 .feature-card > :deep(.el-card__body) {
-  padding: 1.5rem;
+  padding: 1.25rem;
 }
 
 .feature-icon {

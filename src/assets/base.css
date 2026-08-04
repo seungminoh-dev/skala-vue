@@ -2,11 +2,12 @@
   Glass Surface Based Weather Canvas Design
   Vibe Coding With Codex
  */
+
 :root {
   color-scheme: light;
   --font-family-system:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-  --layout-max-width: 1120px;
+  --layout-max-width: 1040px;
   --layout-gutter: clamp(1rem, 3vw, 2rem);
   --layout-edge-space: clamp(2rem, 6vw, 4rem);
   --page-background: #18334d;
@@ -34,6 +35,7 @@
   --shadow-overlay: 0 16px 36px rgb(31 54 79 / 14%);
   --weather-panel: rgb(14 40 61 / 78%);
   --weather-panel-strong: rgb(11 31 49 / 88%);
+  --weather-panel-opaque: #0b1f31;
   --weather-panel-soft: rgb(255 255 255 / 13%);
   --weather-panel-border: rgb(255 255 255 / 22%);
   --weather-on-panel: #ffffff;
@@ -41,10 +43,10 @@
   --weather-on-panel-faint: rgb(255 255 255 / 56%);
   --weather-accent-text: #d7ecff;
   --weather-radius-control: 10px;
-  --weather-radius-surface: 20px;
-  --weather-radius-hero: 24px;
-  --weather-shadow-surface: 0 18px 48px rgb(4 17 29 / 20%);
-  --weather-shadow-hover: 0 24px 56px rgb(4 17 29 / 28%);
+  --weather-radius-surface: 16px;
+  --weather-radius-hero: 18px;
+  --weather-shadow-surface: 0 14px 36px rgb(4 17 29 / 18%);
+  --weather-shadow-hover: 0 18px 42px rgb(4 17 29 / 25%);
   --weather-backdrop: blur(18px) saturate(120%);
 
   --el-font-family: var(--font-family-system);
@@ -93,6 +95,7 @@
   --shadow-overlay: 0 18px 40px rgb(0 0 0 / 30%);
   --weather-panel: rgb(7 19 31 / 84%);
   --weather-panel-strong: rgb(5 14 24 / 92%);
+  --weather-panel-opaque: #050e18;
   --weather-panel-soft: rgb(255 255 255 / 10%);
   --weather-panel-border: rgb(255 255 255 / 18%);
   --el-color-primary-light-3: #79b7ed;

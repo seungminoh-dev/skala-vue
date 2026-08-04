@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
+import { formatWindDirection } from '@/utils/windDirection.js'
 
 const route = useRoute()
 const weatherStore = useWeatherStore()
@@ -65,9 +66,9 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
           </div>
           <p class="detail-region">{{ weather.region }}</p>
           <h1 id="detail-title">{{ weather.name }}</h1>
-          <p class="detail-description">{{ weather.description }}</p>
+          <p class="detail-description">{{ weather.status }}</p>
           <p class="observed-time">
-            {{ formatDateTime(weather.observedAt, weather.timezoneOffset) }} 관측
+            {{ formatDateTime(weather.fetchedAt, weather.timezoneOffset) }} 업데이트
           </p>
         </div>
 
@@ -116,15 +117,9 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
         </div>
 
         <ElDescriptions class="weather-details" :column="1" border>
-          <ElDescriptionsItem label="현재 관측 온도 범위">
+          <ElDescriptionsItem label="풍향">
             <span class="detail-item">
-              {{ displayTemperature(weather.tempMin) }} / {{ displayTemperature(weather.tempMax) }}
-            </span>
-          </ElDescriptionsItem>
-          <ElDescriptionsItem label="풍향 / 돌풍">
-            <span class="detail-item">
-              {{ formatNumber(weather.windDegree, '°') }} /
-              {{ formatNumber(weather.windGust, 'm/s') }}
+              {{ formatWindDirection(weather.windDegree, true) }}
             </span>
           </ElDescriptionsItem>
           <ElDescriptionsItem label="구름량">
@@ -136,9 +131,8 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
               {{ formatPrecipitation(weather.snowLastHour, '적설') }}
             </span>
           </ElDescriptionsItem>
-          <ElDescriptionsItem label="일출 / 일몰">
+          <ElDescriptionsItem label="일몰">
             <span class="detail-item">
-              {{ formatDateTime(weather.sunrise, weather.timezoneOffset) }} /
               {{ formatDateTime(weather.sunset, weather.timezoneOffset) }}
             </span>
           </ElDescriptionsItem>
@@ -167,7 +161,8 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 </template>
 
 <style scoped>
-.top-back-link {
+.back-link.top-back-link {
+  margin-top: 0;
   margin-bottom: 1rem;
   color: var(--weather-accent-text);
   font-size: 13px;
@@ -178,8 +173,8 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
-  padding: clamp(1.5rem, 5vw, 3rem);
+  gap: 1.5rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
   border-radius: var(--weather-radius-hero);
 }
 
@@ -200,7 +195,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 .hero-copy h1,
 .empty-state h1 {
   color: var(--weather-on-panel);
-  font-size: clamp(2.25rem, 7vw, 4.75rem);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 850;
   line-height: 1;
   letter-spacing: -0.055em;
@@ -218,22 +213,22 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 
 .hero-weather {
   display: grid;
-  min-width: 200px;
+  min-width: 160px;
   justify-items: center;
 }
 
 .weather-icon {
   display: grid;
-  width: 100px;
-  height: 100px;
-  font-size: 72px;
+  width: 80px;
+  height: 80px;
+  font-size: 56px;
   line-height: 1;
   place-items: center;
 }
 
 .hero-weather strong {
   color: var(--weather-on-panel);
-  font-size: clamp(3rem, 8vw, 5rem);
+  font-size: clamp(3rem, 6vw, 4.25rem);
   font-weight: 850;
   line-height: 1;
   letter-spacing: -0.06em;
@@ -248,7 +243,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 
 .metric-section,
 .observation-section {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
 }
 
 .section-heading {
@@ -282,7 +277,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .metric-card {
@@ -293,7 +288,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1.1rem;
+  padding: 0.9rem;
 }
 
 .metric-icon {
@@ -341,7 +336,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 }
 
 .weather-details :deep(.el-descriptions__cell) {
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1rem;
   border-color: var(--weather-panel-border) !important;
 }
 
@@ -365,7 +360,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
   text-decoration: none;
 }
 
-@media (max-width: 1119px) {
+@media (max-width: 899px) {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

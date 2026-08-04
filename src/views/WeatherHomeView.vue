@@ -3,6 +3,7 @@
 import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import { ElPopconfirm } from 'element-plus'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import CityRegistrationModal from '@/components/exercise/CityRegistrationModal.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
@@ -10,27 +11,64 @@ import WeatherCard from '@/components/exercise/WeatherCard.vue'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
+import { formatWindDirection } from '@/utils/windDirection.js'
 
 // Essential DAY2: 기존 반응형 변수명을 유지합니다.
 const searchQuery = ref('')
+const weatherFilter = ref('all')
 const selectedCityInfo = ref(null)
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
 const { weatherList } = storeToRefs(weatherStore)
 const router = useRouter()
 
+const getWeatherFilterGroup = (statusGroup = '') => {
+  const normalizedStatus = String(statusGroup).toLocaleLowerCase()
+
+  if (normalizedStatus.includes('clear')) return 'clear'
+  if (normalizedStatus.includes('cloud')) return 'clouds'
+  if (
+    normalizedStatus.includes('rain') ||
+    normalizedStatus.includes('drizzle') ||
+    normalizedStatus.includes('thunder')
+  ) {
+    return 'rain'
+  }
+  if (normalizedStatus.includes('snow')) return 'snow'
+  return 'other'
+}
+
 // Essential DAY2: 검색어가 비어 있으면 전체 배열, 입력 시 일치 도시만 반환합니다.
 const filteredWeatherList = computed(() => {
   const normalizedQuery = searchQuery.value.trim().toLocaleLowerCase()
 
   return [...weatherList.value]
-    .filter((weather) => weather.name.toLocaleLowerCase().includes(normalizedQuery))
+    .filter((weather) => {
+      const searchableLocation = [
+        weather.name,
+        weather.englishName,
+        weather.region,
+        weather.country,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase()
+      const matchesLocation = searchableLocation.includes(normalizedQuery)
+      const matchesWeather =
+        weatherFilter.value === 'all' ||
+        getWeatherFilterGroup(weather.statusGroup) === weatherFilter.value
+
+      return matchesLocation && matchesWeather
+    })
     .sort((left, right) => {
       if (left.id === configStore.primaryLocationKey) return -1
       if (right.id === configStore.primaryLocationKey) return 1
       return left.addedAt - right.addedAt
     })
 })
+const hasActiveFilters = computed(
+  () => Boolean(searchQuery.value.trim()) || weatherFilter.value !== 'all',
+)
 const primaryWeather = computed(
   () =>
     weatherList.value.find((item) => item.id === configStore.primaryLocationKey) ??
@@ -42,29 +80,17 @@ const displayPrimaryFeelsLike = computed(() =>
   configStore.formatTemperature(primaryWeather.value?.feelsLike),
 )
 const primaryWeatherEmoji = computed(() => getWeatherEmoji(primaryWeather.value ?? {}))
-const hasDistinctPrimaryDescription = computed(() => {
-  const status = primaryWeather.value?.status?.trim() ?? ''
-  const description = primaryWeather.value?.description?.trim() ?? ''
+const selectedWeatherSummary = computed(() => {
+  if (!selectedCityInfo.value) return ''
 
-  return Boolean(description && description !== status)
+  return `${configStore.formatTemperature(selectedCityInfo.value.temp)} · ${selectedCityInfo.value.status} · 체감 ${configStore.formatTemperature(selectedCityInfo.value.feelsLike)}`
 })
 const primaryTemperatureSummary = computed(() => {
   if (!primaryWeather.value) return ''
 
-  const { temp, tempMin, tempMax } = primaryWeather.value
-  const rangeLabel =
-    tempMin !== null && tempMin !== undefined && tempMin === tempMax
-      ? `현재 ${configStore.formatTemperature(temp)}`
-      : `관측 범위 ${configStore.formatTemperature(tempMin)} / ${configStore.formatTemperature(tempMax)}`
-
-  return `${rangeLabel} · 체감 ${displayPrimaryFeelsLike.value}`
+  return `현재 ${configStore.formatTemperature(primaryWeather.value.temp)} · 체감 ${displayPrimaryFeelsLike.value}`
 })
 
-const emptyDescription = computed(() =>
-  weatherList.value.length === 0
-    ? '도시 추가 또는 내 위치 버튼으로 첫 지역을 등록해 보세요.'
-    : '검색한 도시와 일치하는 도시가 없습니다.',
-)
 const dashboardSummary = computed(() => {
   if (weatherList.value.length === 0) {
     return '관심 지역을 등록하면 현재 날씨를 한눈에 비교할 수 있습니다.'
@@ -78,7 +104,7 @@ const formatNumber = (value, unit) =>
 const formatWind = (speed, degree) => {
   const wind = []
   if (speed !== null && speed !== undefined) wind.push(`${speed}m/s`)
-  if (degree !== null && degree !== undefined) wind.push(`${degree}°`)
+  if (degree !== null && degree !== undefined) wind.push(formatWindDirection(degree))
 
   return wind.join(' · ') || '정보 없음'
 }
@@ -101,6 +127,9 @@ const formatTime = (timestamp, timezoneOffset = 0) => {
 // Essential DAY1: 자식 Component가 발생시킨 이벤트를 부모 View에서 처리합니다.
 const updateSearchQuery = (content) => {
   searchQuery.value = content
+}
+const updateWeatherFilter = (filter) => {
+  weatherFilter.value = filter
 }
 const selectCity = (city) => {
   selectedCityInfo.value = city
@@ -154,13 +183,10 @@ watchEffect(() => {
   <ElCard class="weather-container route-card" shadow="never" aria-labelledby="weather-title">
     <section class="current-weather-hero" aria-labelledby="weather-title">
       <template v-if="primaryWeather">
-        <div class="hero-location">
-          <span class="location-pin" aria-hidden="true">⌖</span>
-          <div>
-            <p>메인 지역</p>
-            <strong>{{ primaryWeather.name }}</strong>
-            <span>{{ primaryWeather.region }}</span>
-          </div>
+        <div class="location-heading-copy hero-location">
+          <p class="location-heading-kicker">MY FAVORITE LOCATION</p>
+          <strong class="location-heading-title">{{ primaryWeather.name }}</strong>
+          <span class="location-heading-meta">{{ primaryWeather.region }}</span>
         </div>
 
         <div class="hero-weather-main">
@@ -176,9 +202,6 @@ watchEffect(() => {
               </span>
             </div>
             <h1 id="weather-title">{{ primaryWeather.status }}</h1>
-            <p v-if="hasDistinctPrimaryDescription" class="hero-description">
-              {{ primaryWeather.description }}
-            </p>
             <p class="temperature-meta">{{ primaryTemperatureSummary }}</p>
           </div>
         </div>
@@ -215,47 +238,28 @@ watchEffect(() => {
     </section>
 
     <ElSpace class="dashboard-content" direction="vertical" :size="24" fill>
-      <BaseDashboardCard class="control-panel">
-        <div class="control-layout">
-          <SearchBar :search-query="searchQuery" @update-query="updateSearchQuery" />
-          <CityRegistrationModal @city-registered="selectRegisteredCity" />
-        </div>
-      </BaseDashboardCard>
-
-      <output class="weather-status" aria-live="polite">
-        <ElAlert
-          class="weather-surface"
-          :title="
-            selectedCityInfo
-              ? `${selectedCityInfo.name}이 선택되었습니다.`
-              : weatherList.length
-                ? '날씨 카드를 선택하거나 상세 정보를 확인해 보세요.'
-                : '도시를 등록하면 현재 날씨가 여기에 표시됩니다.'
-          "
-          type="success"
-          show-icon
-          :closable="false"
-        />
-      </output>
-
       <BaseDashboardCard class="list-panel">
         <section aria-labelledby="weather-list-title">
           <div class="section-heading">
-            <div>
-              <p class="section-kicker">MY LOCATIONS</p>
-              <h2 id="weather-list-title" class="weather-card-title">등록 지역</h2>
-              <p>{{ dashboardSummary }}</p>
+            <div class="location-heading-copy">
+              <p class="location-heading-kicker">MY LOCATIONS</p>
+              <h2 id="weather-list-title" class="location-heading-title">등록 지역</h2>
+              <p class="location-heading-meta">{{ dashboardSummary }}</p>
             </div>
-            <span class="result-count">{{ filteredWeatherList.length }}개 표시</span>
           </div>
 
-          <ElEmpty
-            v-if="filteredWeatherList.length === 0"
-            class="weather-surface"
-            :description="emptyDescription"
-            :image-size="96"
-          />
-          <div v-else class="weather-list">
+          <div class="search-control-panel">
+            <SearchBar
+              :search-query="searchQuery"
+              :weather-filter="weatherFilter"
+              :result-count="filteredWeatherList.length"
+              :total-count="weatherList.length"
+              @update-query="updateSearchQuery"
+              @update-weather-filter="updateWeatherFilter"
+            />
+          </div>
+
+          <div v-if="filteredWeatherList.length > 0 || !hasActiveFilters" class="weather-list">
             <WeatherCard
               v-for="item in filteredWeatherList"
               :key="item.id"
@@ -264,8 +268,51 @@ watchEffect(() => {
               :is-primary="configStore.primaryLocationKey === item.id"
               @select-card="selectCity"
               @click-detail="showDetail"
-              @remove-city="removeCity"
             />
+            <CityRegistrationModal
+              v-if="!hasActiveFilters"
+              @city-registered="selectRegisteredCity"
+            />
+          </div>
+          <ElEmpty
+            v-else
+            class="filter-empty-state weather-surface"
+            description="검색·날씨 조건에 맞는 등록 지역이 없습니다."
+            :image-size="88"
+          />
+
+          <div
+            class="weather-status weather-surface"
+            :class="{ 'has-selection': selectedCityInfo }"
+          >
+            <output class="weather-status-output" aria-live="polite">
+              <ElAlert
+                class="selection-alert"
+                :title="
+                  selectedCityInfo
+                    ? `${selectedCityInfo.name}이 선택되었습니다.`
+                    : weatherList.length
+                      ? '날씨 카드를 선택하거나 상세 정보를 확인해 보세요.'
+                      : '도시를 등록하면 선택한 지역 정보가 여기에 표시됩니다.'
+                "
+                :description="selectedWeatherSummary"
+                type="success"
+                show-icon
+                :closable="false"
+              />
+            </output>
+
+            <ElPopconfirm
+              v-if="selectedCityInfo"
+              :title="`${selectedCityInfo.name}을(를) 목록에서 삭제할까요?`"
+              confirm-button-text="삭제"
+              cancel-button-text="취소"
+              @confirm="removeCity(selectedCityInfo)"
+            >
+              <template #reference>
+                <ElButton class="selected-delete-button" type="danger" plain> 삭제 </ElButton>
+              </template>
+            </ElPopconfirm>
           </div>
         </section>
       </BaseDashboardCard>
@@ -279,49 +326,44 @@ watchEffect(() => {
   min-height: 0;
   flex-direction: column;
   justify-content: flex-start;
-  padding: clamp(1rem, 3vw, 2rem) 0 clamp(2rem, 4vw, 3rem);
+  padding: 0 0 clamp(1.75rem, 3vw, 2.5rem);
   color: var(--weather-on-panel);
   text-shadow: 0 2px 18px rgb(4 17 29 / 30%);
 }
 
-.hero-location {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.location-pin {
-  font-size: 30px;
-}
-
-.hero-location div {
+.location-heading-copy {
   display: grid;
 }
 
-.hero-location p,
-.hero-location span,
-.temperature-meta,
-.hero-description {
+.location-heading-kicker {
+  color: var(--weather-accent-text);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+}
+
+.location-heading-title {
+  margin-top: 0.2rem;
+  color: var(--weather-on-panel);
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1.5;
+  letter-spacing: -0.03em;
+}
+
+.location-heading-meta {
+  margin-top: 0.4rem;
+  color: var(--weather-on-panel-muted);
+  font-size: 13px;
+}
+
+.temperature-meta {
   color: var(--weather-on-panel-muted);
 }
 
-.hero-location p {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.hero-location strong {
-  font-size: 26px;
-  font-weight: 850;
-}
-
-.hero-location span {
-  font-size: 12px;
-}
-
 .hero-weather-main {
-  margin-top: clamp(2.5rem, 6vh, 4rem);
+  margin-top: clamp(2rem, 4vh, 3rem);
 }
 
 .hero-copy {
@@ -335,7 +377,7 @@ watchEffect(() => {
 }
 
 .hero-temperature {
-  font-size: clamp(5.5rem, 14vw, 10rem);
+  font-size: clamp(4.75rem, 8vw, 7.5rem);
   font-weight: 300;
   line-height: 0.86;
   letter-spacing: -0.085em;
@@ -343,10 +385,10 @@ watchEffect(() => {
 
 .hero-weather-icon {
   display: grid;
-  width: clamp(84px, 10vw, 140px);
-  height: clamp(84px, 10vw, 140px);
+  width: clamp(72px, 7vw, 104px);
+  height: clamp(72px, 7vw, 104px);
   filter: drop-shadow(0 6px 18px rgb(4 17 29 / 24%));
-  font-size: clamp(4rem, 9vw, 7.5rem);
+  font-size: clamp(3.5rem, 6vw, 5.5rem);
   line-height: 1;
   place-items: center;
 }
@@ -355,15 +397,10 @@ watchEffect(() => {
 .empty-hero h1 {
   margin-top: 1.25rem;
   color: var(--weather-on-panel);
-  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-size: clamp(1.875rem, 3.5vw, 3rem);
   font-weight: 750;
   line-height: 1.05;
   letter-spacing: -0.045em;
-}
-
-.hero-description {
-  margin-top: 0.6rem;
-  font-size: 18px;
 }
 
 .temperature-meta {
@@ -376,12 +413,12 @@ watchEffect(() => {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
-  margin-top: clamp(2rem, 4vw, 3rem);
-  border-radius: var(--weather-radius-hero);
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  border-radius: var(--weather-radius-surface);
 }
 
 .hero-metrics div {
-  padding: 1.15rem 1.35rem;
+  padding: 0.9rem 1.1rem;
 }
 
 .hero-metrics div + div {
@@ -429,7 +466,6 @@ watchEffect(() => {
   width: 100%;
 }
 
-.control-layout,
 .section-heading {
   display: flex;
   align-items: center;
@@ -437,27 +473,51 @@ watchEffect(() => {
   gap: 1.5rem;
 }
 
-.control-layout > :first-child {
+.weather-status {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--weather-radius-surface);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.weather-status.has-selection {
+  border-color: rgb(255 255 255 / 72%);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 28%),
+    var(--weather-shadow-surface);
+}
+
+.weather-status-output {
+  min-width: 0;
   flex: 1;
 }
 
-.control-layout :deep(.city-registration) {
-  flex: none;
-  translate: 0 1rem;
-}
-
-.control-layout :deep(.city-add-button) {
-  min-height: 44px;
-}
-
-.weather-status {
-  display: block;
-  width: 100%;
-}
-
 .weather-status :deep(.el-alert__title),
+.weather-status :deep(.el-alert__description),
 .weather-status :deep(.el-alert__icon) {
   color: var(--weather-on-panel);
+}
+
+.weather-status :deep(.el-alert) {
+  width: 100%;
+  height: auto;
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.selected-delete-button {
+  min-width: 72px;
+  min-height: 40px;
+  flex: none;
+  align-self: center;
 }
 
 .list-panel {
@@ -474,63 +534,36 @@ watchEffect(() => {
   padding: 0 !important;
 }
 
-.section-heading {
-  padding-block: 0.25rem 0.5rem;
-  color: var(--weather-on-panel);
-}
-
-.section-heading > div > p:last-child {
-  margin-top: 0.4rem;
-  color: var(--weather-on-panel-muted);
-  font-size: 13px;
-}
-
-.section-kicker {
-  color: var(--weather-accent-text);
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1.4;
-  letter-spacing: 0.12em;
-}
-
-.weather-card-title {
-  margin-top: 0.2rem;
-  font-size: 28px;
-  font-weight: 850;
-  letter-spacing: -0.03em;
-}
-
-.result-count {
-  min-height: 34px;
-  padding: 0.45rem 0.75rem;
+.search-control-panel {
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
   border: 1px solid var(--weather-panel-border);
-  border-radius: var(--weather-radius-control);
-  background: var(--weather-panel);
+  border-radius: var(--weather-radius-surface);
+  background: var(--weather-panel-opaque);
+  box-shadow: var(--shadow-control);
+}
+
+.section-heading {
   color: var(--weather-on-panel);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.4;
-  backdrop-filter: var(--weather-backdrop);
 }
 
 .weather-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
   margin-top: 1.25rem;
 }
 
-.list-panel :deep(.el-empty) {
+.filter-empty-state {
   margin-top: 1.25rem;
-  padding: 2rem;
-  border-radius: var(--weather-radius-hero);
+  border-radius: var(--weather-radius-surface);
 }
 
-.list-panel :deep(.el-empty__description p) {
+.filter-empty-state :deep(.el-empty__description p) {
   color: var(--weather-on-panel-muted);
 }
 
-@media (max-width: 1119px) {
+@media (max-width: 899px) {
   .weather-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -559,26 +592,24 @@ watchEffect(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .weather-status :deep(.el-alert) {
+    width: 100%;
+  }
+
+  .weather-status {
+    flex-direction: column;
+  }
+
+  .selected-delete-button {
+    width: 100%;
+  }
+
   .hero-metrics div:nth-child(3) {
     border-left: 0;
   }
 
   .hero-metrics div:nth-child(n + 3) {
     border-top: 1px solid var(--weather-panel-border);
-  }
-
-  .control-layout {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .control-layout :deep(.city-registration),
-  .control-layout :deep(.city-add-button) {
-    width: 100%;
-  }
-
-  .control-layout :deep(.city-registration) {
-    translate: 0;
   }
 
   .weather-list {
