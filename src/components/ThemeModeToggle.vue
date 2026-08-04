@@ -1,7 +1,7 @@
 <!-- AI GENERATED CODE: 설정 Store와 동기화되는 Bright·Dark 화면 모드 제어입니다. -->
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useConfigStore } from '@/stores/configStore.js'
+import { useConfigStore } from '@/stores/config.js'
 
 const configStore = useConfigStore()
 const isDarkMode = computed({

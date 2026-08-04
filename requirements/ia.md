@@ -20,7 +20,7 @@ flowchart TD
   OUTLET["RouterView"]
 
   HOME["/ · WeatherHomeView"]
-  DETAIL["/weather/:id · WeatherDetailView"]
+  DETAIL["/weather/:id · WeatherDetailView<br/>id 값은 Location slug"]
   ABOUT["/about · WeatherAboutView"]
   ERROR["Catch-all · NotFoundView"]
 
@@ -29,7 +29,7 @@ flowchart TD
   GRID["WeatherCard Grid"]
   STATUS["선택 상태"]
   WEATHER_STORE["weatherStore"]
-  CONFIG_STORE["configStore"]
+  CONFIG_STORE["config.js · useConfigStore"]
   STORAGE["localStorage"]
   API["OpenWeather Current Weather"]
 
@@ -75,7 +75,7 @@ Weather Board
 │   ├── 도시 추가
 │   ├── 현재 선택 상태
 │   └── Weather Card Grid
-│       └── Weather Report                       /weather/:id
+│       └── Weather Report                       /weather/:id (예: /weather/seoul-kr)
 ├── About                                        /about
 └── Not Found                                    /:pathMatch(.*)*
 ```
@@ -123,10 +123,12 @@ Weather Board
 | Home     | `SearchBar`             | 네이티브 `:value/@input` 한글 검색                      |
 | Home     | `CityRegistrationModal` | 국내 저장 좌표·해외 Geocoding 도시 등록                 |
 | Home     | `WeatherCard`           | 요약·선택·삭제·상세 이동·단위 표시                      |
-| Detail   | `WeatherDetailView`     | Route ID로 실제 날씨 조회·단위 표시                     |
-| Data     | `weatherStore`          | 등록 지역, Cache, 호출 제한, API 동기화                 |
-| Data     | `configStore`           | 메인 지역, 단위, 테마 영속화                            |
+| Detail   | `WeatherDetailView`     | Route slug로 실제 날씨 조회·단위 표시                   |
+| Data     | `weatherStore`          | 내부 좌표 Key, URL slug, Cache, 호출 제한, API 동기화   |
+| Data     | `config.js`             | `useConfigStore`로 메인 지역, 단위, 테마 영속화         |
 | Visual   | `weatherVisuals`        | OpenWeather 상태를 임시 Unicode 날씨 기호로 변환        |
+| Visual   | `weatherBackground`     | 날씨 상태·온도를 Canvas 배경과 Tone으로 변환            |
+| Utility  | `koreanCities`          | 한국 주요 도시 좌표와 로컬 검색 Utility                 |
 | Style    | `base.css`              | 레이아웃·색상·반경·Surface 디자인 토큰                  |
 | Style    | `main.css`              | Element Plus 공통 규칙과 `weather-surface` primitive    |
 
@@ -152,11 +154,18 @@ sequenceDiagram
   Home-->>User: 선택 상태 표시
   User->>Card: 상세 보기
   Card-->>Home: click-detail(city), 버블링 중단
-  Home->>Detail: /weather/:id
-  Detail->>Store: ID 조회 및 Cache 갱신
+  Home->>Detail: /weather/:id (사람이 읽는 slug)
+  Detail->>Store: slug를 내부 좌표 Key로 해석해 Cache 갱신
 ```
 
-## 6. 레이아웃 원칙
+## 6. Location 식별자 원칙
+
+- `key`: `geo:위도:경도` 형식의 내부 식별자입니다. Store 조회·선택·삭제·Cache 연결에만 사용합니다.
+- `slug`: `seoul-kr`처럼 영문 도시명과 국가 코드로 만든 URL 식별자입니다.
+- 같은 slug가 생기면 좌표 원문을 노출하지 않는 짧은 fingerprint를 뒤에 붙여 충돌을 피합니다.
+- 기존 좌표 Key 상세 URL은 같은 도시의 slug URL로 자동 교체해 저장된 북마크를 호환합니다.
+
+## 7. 레이아웃 원칙
 
 - Weather Canvas의 Header·본문·Footer 최대 너비는 모두 `1120px`입니다.
 - 배경은 메인 지역 또는 상세 지역의 날씨에 따라 맑음·폭염·비·눈 자산을 전환합니다.

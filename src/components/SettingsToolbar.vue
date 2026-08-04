@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { ElButton, ElMessage, ElOption, ElSelect } from 'element-plus'
 import ThemeModeToggle from '@/components/ThemeModeToggle.vue'
 import UnitToggler from '@/components/UnitToggler.vue'
-import { useConfigStore } from '@/stores/configStore.js'
+import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
 const configStore = useConfigStore()

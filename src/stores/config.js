@@ -1,4 +1,4 @@
-// AI GENERATED CODE: 온도 단위·화면 테마·메인 지역을 localStorage와 동기화하는 설정 Store입니다.
+// AI GENERATED CODE: 온도 단위·화면 테마·메인 지역을 localStorage와 동기화하는 Config Store입니다.
 
 import { defineStore } from 'pinia'
 

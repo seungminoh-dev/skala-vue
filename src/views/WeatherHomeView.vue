@@ -7,7 +7,7 @@ import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import CityRegistrationModal from '@/components/exercise/CityRegistrationModal.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
-import { useConfigStore } from '@/stores/configStore.js'
+import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
 
@@ -115,7 +115,7 @@ const selectRegisteredCity = (city) => {
   }
 }
 const showDetail = (city) => {
-  router.push({ name: 'detail', params: { id: city.id } })
+  router.push({ name: 'detail', params: { id: city.slug ?? city.id } })
 }
 const removeCity = (city) => {
   weatherStore.removeLocation(city.id)
@@ -487,7 +487,7 @@ watchEffect(() => {
   backdrop-filter: none;
 }
 
-.list-panel :deep(.el-card__body) {
+.list-panel > :deep(.el-card__body) {
   overflow: visible;
   padding: 0 !important;
 }

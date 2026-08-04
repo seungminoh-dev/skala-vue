@@ -1,7 +1,8 @@
 // AI GENERATED CODE: 등록 도시·날씨 Cache·호출 제한·localStorage를 관리하는 Pinia Store입니다.
 
 import { defineStore } from 'pinia'
-import { findKoreanCities } from '@/data/koreanCities.js'
+import { findKoreanCities } from '@/utils/koreanCities.js'
+import { addLocationSlugs, createUniqueLocationSlug } from '@/utils/locationSlug.js'
 import {
   getCurrentWeather,
   hasOpenWeatherApiKey,
@@ -110,10 +111,19 @@ export const useWeatherStore = defineStore('weather', {
           return
         }
 
-        this.registeredLocations = snapshot.registeredLocations
+        const registeredLocations = addLocationSlugs(snapshot.registeredLocations)
+        const hasMigratedSlug = registeredLocations.some(
+          (location, index) => location.slug !== snapshot.registeredLocations[index]?.slug,
+        )
+
+        this.registeredLocations = registeredLocations
         this.weatherByKey = snapshot.weatherByKey
         this.geocodingCache = snapshot.geocodingCache ?? {}
         this.selectedLocationKey = snapshot.selectedLocationKey ?? null
+
+        if (hasMigratedSlug) {
+          this.persist()
+        }
       } catch {
         window.localStorage.removeItem(STORAGE_KEY)
       } finally {
@@ -261,15 +271,30 @@ export const useWeatherStore = defineStore('weather', {
 
       try {
         const weather = await getCurrentWeather(candidate)
+        const locationName =
+          candidate.source === 'geolocation'
+            ? weather.providerName || candidate.name
+            : candidate.name
+        const englishName =
+          candidate.source === 'geolocation'
+            ? weather.providerName || candidate.englishName || candidate.name
+            : candidate.englishName || candidate.name
+        const country = candidate.country || weather.providerCountry || ''
         const location = {
           key: locationKey,
-          name:
-            candidate.source === 'geolocation'
-              ? weather.providerName || candidate.name
-              : candidate.name,
-          englishName: candidate.englishName ?? candidate.name,
+          slug: createUniqueLocationSlug(
+            {
+              ...candidate,
+              name: locationName,
+              englishName,
+              country,
+            },
+            this.registeredLocations.map((registeredLocation) => registeredLocation.slug),
+          ),
+          name: locationName,
+          englishName,
           state: candidate.state ?? '',
-          country: candidate.country || weather.providerCountry || '',
+          country,
           lat: Number(candidate.lat),
           lon: Number(candidate.lon),
           source: candidate.source ?? 'geocoding',

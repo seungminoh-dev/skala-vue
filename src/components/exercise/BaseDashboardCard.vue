@@ -15,7 +15,7 @@
   border-radius: var(--weather-radius-hero);
 }
 
-.base-card :deep(.el-card__body) {
+.base-card > :deep(.el-card__body) {
   padding: var(--el-card-padding);
 }
 </style>

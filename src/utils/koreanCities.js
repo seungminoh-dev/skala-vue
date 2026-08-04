@@ -1,4 +1,4 @@
-// AI GENERATED CODE: OpenWeather 호출을 줄이기 위한 한국 주요 도시 대표 중심 좌표 데이터입니다.
+// AI GENERATED CODE: Utils에서 재사용하는 한국 주요 도시 대표 중심 좌표 데이터입니다.
 
 export const koreanCities = Object.freeze([
   {

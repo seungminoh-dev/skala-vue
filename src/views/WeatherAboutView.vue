@@ -112,7 +112,7 @@ h1 {
   border-radius: var(--weather-radius-surface);
 }
 
-.feature-card :deep(.el-card__body) {
+.feature-card > :deep(.el-card__body) {
   padding: 1.5rem;
 }
 

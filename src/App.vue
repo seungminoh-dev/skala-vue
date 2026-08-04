@@ -1,14 +1,12 @@
-<!-- AI GENERATED CODE: Navigation과 서비스 설정을 결합한 반응형 Weather App Shell입니다. -->
+<!-- AI GENERATED CODE: Location slug에 대응하는 전역 Weather App Shell입니다. -->
 <script setup>
 import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import SettingsToolbar from '@/components/SettingsToolbar.vue'
-import heatwaveBackground from '@/assets/bg/optimized/heatwave.jpg'
-import rainBackground from '@/assets/bg/optimized/rain.jpg'
-import snowBackground from '@/assets/bg/optimized/snow.jpg'
-import sunnyBackground from '@/assets/bg/optimized/sunny.jpg'
-import { useConfigStore } from '@/stores/configStore.js'
+/* Pinia Store -> Config(설정), Weather(날씨) */
+import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
+import { resolveWeatherCanvas } from '@/utils/weatherBackground.js' // 현재 정보를 판단하여 배경을 반환해주는 유틸
 
 const route = useRoute()
 const configStore = useConfigStore()
@@ -23,33 +21,15 @@ const primaryWeather = computed(
 const canvasWeather = computed(() => {
   if (route.name === 'detail') {
     return (
-      weatherStore.weatherList.find((item) => item.id === route.params.id) ?? primaryWeather.value
+      weatherStore.weatherList.find(
+        (item) => item.slug === route.params.id || item.id === route.params.id,
+      ) ?? primaryWeather.value
     )
   }
 
   return primaryWeather.value
 })
-const weatherCanvas = computed(() => {
-  const statusGroup = canvasWeather.value?.statusGroup?.toLocaleLowerCase() ?? ''
-
-  if (statusGroup.includes('snow')) {
-    return { background: snowBackground, tone: 'weather-tone-snow' }
-  }
-
-  if (
-    statusGroup.includes('rain') ||
-    statusGroup.includes('drizzle') ||
-    statusGroup.includes('thunder')
-  ) {
-    return { background: rainBackground, tone: 'weather-tone-rain' }
-  }
-
-  if ((canvasWeather.value?.temp ?? 0) >= 33) {
-    return { background: heatwaveBackground, tone: 'weather-tone-heat' }
-  }
-
-  return { background: sunnyBackground, tone: 'weather-tone-sunny' }
-})
+const weatherCanvas = computed(() => resolveWeatherCanvas(canvasWeather.value))
 const canvasStyle = computed(() => ({
   '--weather-background-image': `url("${weatherCanvas.value.background}")`,
 }))

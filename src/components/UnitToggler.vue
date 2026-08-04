@@ -1,7 +1,7 @@
 <!-- AI GENERATED CODE: essentialCheck DAY5의 섭씨·화씨 단위 변경 UI입니다. -->
 <script setup>
 import { onMounted } from 'vue'
-import { useConfigStore } from '@/stores/configStore.js'
+import { useConfigStore } from '@/stores/config.js'
 
 const configStore = useConfigStore()
 
