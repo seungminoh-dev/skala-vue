@@ -24,10 +24,56 @@ const props = defineProps({
 const emit = defineEmits(['retry'])
 const configStore = useConfigStore()
 
+const currentHour = (timezone) => {
+  if (!timezone) return ''
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  })
+    .formatToParts(new Date())
+    .reduce((result, part) => ({ ...result, [part.type]: part.value }), {})
+
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:00`
+}
+
 const hours = computed(() => {
   const items = props.forecast?.hourly ?? []
-  const selected = props.compact ? items.filter((_, index) => index % 4 === 0).slice(0, 6) : items
-  return selected.map((hour) => ({ ...hour, visual: getVisual(hour) }))
+  const now = currentHour(props.forecast?.timezone)
+  const future = now ? items.filter((hour) => hour.time > now) : items.slice(1)
+
+  return future.slice(0, 12).map((hour) => ({ ...hour, visual: getVisual(hour) }))
+})
+
+const chart = computed(() => {
+  const width = 960
+  const top = 24
+  const bottom = 112
+  const values = hours.value.map((hour) => hour.temp).filter(Number.isFinite)
+
+  if (!values.length) return { dots: [], line: '', area: '' }
+
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = Math.max(max - min, 1)
+  const dots = hours.value.map((hour, index) => {
+    const value = Number.isFinite(hour.temp) ? hour.temp : min
+    return {
+      x: width * ((index + 0.5) / hours.value.length),
+      y: top + ((max - value) / range) * (bottom - top),
+    }
+  })
+  const line = dots.map(({ x, y }) => `${x},${y}`).join(' ')
+
+  return {
+    dots,
+    line,
+    area: `${dots[0].x},${bottom} ${line} ${dots.at(-1).x},${bottom}`,
+  }
 })
 
 const days = computed(() => {
@@ -83,35 +129,64 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
     <template v-else-if="forecast">
       <section class="forecast-section" aria-labelledby="hourly-title">
         <div class="forecast-title-row">
-          <h3 id="hourly-title">앞으로 24시간</h3>
-          <span v-if="compact">4시간 간격</span>
+          <h3 id="hourly-title">앞으로 12시간</h3>
+          <span>현재 시각 이후 · 1시간 간격</span>
         </div>
 
-        <div class="hourly-list" tabindex="0" aria-label="시간별 날씨 예보">
-          <article v-for="hour in hours" :key="hour.time" class="hour-card">
-            <time :datetime="hour.time">{{ hourLabel(hour.time) }}</time>
-            <span class="forecast-icon" role="img" :aria-label="hour.status">
-              {{ hour.visual.emoji }}
-            </span>
-            <strong>{{ configStore.formatTemp(hour.temp) }}</strong>
-            <span class="forecast-status">{{ hour.status }}</span>
-            <span class="rain-chance">☂ {{ percent(hour.rainChance) }}</span>
-            <dl v-if="!compact" class="hour-details">
-              <div>
-                <dt>체감</dt>
-                <dd>{{ configStore.formatTemp(hour.feelsLike) }}</dd>
+        <div
+          v-if="hours.length"
+          class="hourly-chart-scroll"
+          tabindex="0"
+          aria-label="현재 시각 이후 12시간의 기온과 날씨 예보"
+        >
+          <div class="hourly-chart" :style="{ '--hour-count': hours.length }">
+            <svg
+              class="temperature-graph"
+              viewBox="0 0 960 128"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="forecast-temperature-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--weather-accent-text)" stop-opacity="0.3" />
+                  <stop offset="100%" stop-color="var(--weather-accent-text)" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <line v-for="y in [24, 68, 112]" :key="y" x1="0" :y1="y" x2="960" :y2="y" />
+              <polygon :points="chart.area" fill="url(#forecast-temperature-area)" />
+              <polyline :points="chart.line" />
+              <g
+                v-for="(dot, index) in chart.dots"
+                :key="hours[index].time"
+                class="temperature-point"
+                :class="{ 'is-next': index === 0 }"
+              >
+                <circle :cx="dot.x" :cy="dot.y" :r="index === 0 ? 5 : 3.5" />
+              </g>
+            </svg>
+
+            <div class="chart-hours">
+              <div
+                v-for="(hour, index) in hours"
+                :key="hour.time"
+                class="chart-hour"
+                :class="{ 'is-next': index === 0 }"
+                :aria-label="`${hourLabel(hour.time)}, ${configStore.formatTemp(hour.temp)}, ${hour.status}, 강수확률 ${percent(hour.rainChance)}`"
+              >
+                <time :datetime="hour.time">
+                  {{ index === 0 ? `다음 · ${hourLabel(hour.time)}` : hourLabel(hour.time) }}
+                </time>
+                <span class="forecast-icon" role="img" :aria-label="hour.status">
+                  {{ hour.visual.emoji }}
+                </span>
+                <strong class="chart-temp">{{ configStore.formatTemp(hour.temp) }}</strong>
+                <span class="rain-chance">☂ {{ percent(hour.rainChance) }}</span>
               </div>
-              <div>
-                <dt>습도</dt>
-                <dd>{{ percent(hour.humidity) }}</dd>
-              </div>
-              <div>
-                <dt>바람</dt>
-                <dd>{{ hour.windSpeed ?? '-' }}m/s</dd>
-              </div>
-            </dl>
-          </article>
+            </div>
+          </div>
         </div>
+
+        <p v-else class="forecast-empty">다음 시간 예보를 준비하고 있습니다.</p>
       </section>
 
       <section class="forecast-section weekly-section" aria-labelledby="weekly-title">
@@ -121,7 +196,12 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
         </div>
 
         <div class="daily-list">
-          <article v-for="(day, index) in days" :key="day.date" class="day-card">
+          <article
+            v-for="(day, index) in days"
+            :key="day.date"
+            class="day-card"
+            :class="{ 'is-today': index === 0 }"
+          >
             <div class="day-date">
               <strong>{{ dayLabel(day.date, index) }}</strong>
               <time :datetime="day.date">{{ dateLabel(day.date) }}</time>
@@ -234,35 +314,111 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   font-size: 11px;
 }
 
-.hourly-list {
-  display: grid;
-  grid-auto-columns: minmax(112px, 1fr);
-  grid-auto-flow: column;
-  gap: 0.6rem;
+.hourly-chart-scroll {
   margin-top: 0.65rem;
   padding-bottom: 0.3rem;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 
-.hour-card,
+.hourly-chart {
+  min-width: 960px;
+}
+
+.temperature-graph {
+  display: block;
+  width: 100%;
+  height: 128px;
+  overflow: visible;
+}
+
+.temperature-graph line {
+  stroke: var(--weather-panel-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.temperature-graph polyline {
+  fill: none;
+  stroke: var(--weather-accent-text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.temperature-point circle {
+  fill: var(--weather-panel-opaque);
+  stroke: var(--weather-accent-text);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.temperature-point.is-next circle {
+  fill: var(--weather-accent-text);
+}
+
+.chart-hours {
+  display: grid;
+  grid-template-columns: repeat(var(--hour-count), minmax(0, 1fr));
+  margin-top: 0.35rem;
+}
+
+.chart-hour {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.2rem;
+  border-radius: var(--weather-radius-control);
+  text-align: center;
+}
+
+.chart-hour.is-next,
+.day-card.is-today {
+  background: color-mix(in srgb, var(--accent) 28%, var(--weather-panel-soft));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--weather-accent-text) 54%, transparent);
+}
+
+.chart-hour time {
+  color: var(--weather-on-panel-faint);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.chart-hour.is-next time,
+.day-card.is-today .day-date strong {
+  color: var(--weather-accent-text);
+  font-weight: 850;
+}
+
+.chart-hour .forecast-icon {
+  font-size: 22px;
+}
+
+.chart-temp {
+  color: var(--weather-on-panel);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.forecast-empty {
+  margin-top: 0.65rem;
+  padding: 1rem 0;
+  color: var(--weather-on-panel-faint);
+  font-size: 12px;
+}
+
 .day-card {
   border: 1px solid var(--weather-panel-border);
   border-radius: var(--weather-radius-control);
   background: var(--weather-panel-soft);
 }
 
-.hour-card {
-  display: grid;
-  min-height: 176px;
-  justify-items: center;
-  gap: 0.25rem;
-  padding: 0.75rem 0.6rem;
-  color: var(--weather-on-panel);
-  text-align: center;
+.day-card.is-today {
+  border-color: color-mix(in srgb, var(--weather-accent-text) 72%, transparent);
 }
 
-.hour-card time,
 .day-date time,
 .forecast-status,
 .rain-chance {
@@ -275,11 +431,6 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   line-height: 1;
 }
 
-.hour-card > strong {
-  font-size: 18px;
-  font-weight: 850;
-}
-
 .forecast-status {
   min-height: 30px;
   line-height: 1.35;
@@ -288,31 +439,6 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
 .rain-chance {
   color: #bfe4ff;
   font-weight: 800;
-}
-
-.hour-details {
-  display: grid;
-  width: 100%;
-  gap: 0.25rem;
-  margin-top: 0.35rem;
-  padding-top: 0.45rem;
-  border-top: 1px solid var(--weather-panel-border);
-}
-
-.hour-details div {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 10px;
-}
-
-.hour-details dt {
-  color: var(--weather-on-panel-faint);
-}
-
-.hour-details dd {
-  color: var(--weather-on-panel);
-  font-weight: 750;
 }
 
 .weekly-section {
@@ -370,14 +496,6 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
 
 .forecast-source a {
   margin-left: auto;
-}
-
-.is-compact .hour-card {
-  min-height: 150px;
-}
-
-.is-compact .hourly-list {
-  grid-auto-columns: minmax(100px, 1fr);
 }
 
 .is-compact .daily-list {

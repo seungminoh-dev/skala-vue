@@ -6,12 +6,12 @@
 Weather Board
 ├── Weather Home                         /
 │   ├── 대표 지역 현재 날씨
-│   ├── 대표 지역 24시간·주간 예보 미리보기
+│   ├── 대표 지역 다음 12시간·주간 예보 미리보기
 │   ├── 등록 지역 검색·필터
 │   └── Weather Card Grid
 ├── Weather Detail                       /weather/:id
 │   ├── 현재 관측 정보
-│   ├── 앞으로 24시간 예보
+│   ├── 다음 12시간 예보
 │   └── 7일 예보
 ├── About                                /about
 └── Not Found                            /:pathMatch(.*)*

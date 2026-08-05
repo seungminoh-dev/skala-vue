@@ -49,7 +49,8 @@ clear | clouds | rain | snow | thunder | mist
 
 ## Forecast
 
-Open-Meteo의 앞으로 24시간과 7일 예보입니다.
+Open-Meteo의 24시간 원본 데이터와 7일 예보입니다. UI에서는 지역의 현재 시각을 제외하고
+다음 12시간을 온도 그래프로 표시합니다.
 
 ```js
 {
