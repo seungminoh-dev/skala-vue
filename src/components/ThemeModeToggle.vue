@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Moon, Sunny } from '@element-plus/icons-vue'
 import { ElButton, ElTooltip } from 'element-plus'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 
 const configStore = useConfigStore()
 const isDarkMode = computed({
@@ -13,14 +13,14 @@ const isDarkMode = computed({
 
 <template>
   <ElTooltip
-    :content="isDarkMode ? '밝은 모드로 변경' : '다크 모드로 변경'"
+    :content="isDarkMode ? '주간 모드로 변경' : '다크 모드로 변경'"
     placement="bottom"
     :show-after="300"
   >
     <ElButton
       class="theme-mode-toggle"
       plain
-      :aria-label="isDarkMode ? '밝은 모드로 변경' : '다크 모드로 변경'"
+      :aria-label="isDarkMode ? '주간 모드로 변경' : '다크 모드로 변경'"
       :aria-pressed="isDarkMode"
       @click="isDarkMode = !isDarkMode"
     >

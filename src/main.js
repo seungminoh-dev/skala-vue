@@ -11,11 +11,8 @@ import router from './router'
 
 const app = createApp(App)
 
-/* Router 등록 */
+/* Router, Pinia, ElementPlus 등록 */
 app.use(router)
-/* Pinia를 전역 저장소로 등록 */
 app.use(createPinia())
-/* ElementPlus 등록 */
 app.use(ElementPlus)
-/* SPA 서비스 시작 */
 app.mount('#app')

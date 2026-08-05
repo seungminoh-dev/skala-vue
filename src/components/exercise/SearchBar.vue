@@ -40,7 +40,7 @@ const selectedWeatherLabel = computed(
   <section id="weather-search" class="weather-search" aria-label="등록 지역 검색">
     <div class="control-row">
       <div class="control-field">
-        <label class="control-label" for="city-search">등록된 도시 이름</label>
+        <label class="control-label" for="city-search">등록된 도시 검색</label>
         <input
           id="city-search"
           class="search-input"
@@ -82,7 +82,7 @@ const selectedWeatherLabel = computed(
           </span>
         </output>
       </div>
-      <strong class="result-count">{{ resultCount }} / {{ totalCount }}개 표시</strong>
+      <strong class="result-count">{{ resultCount }} / {{ totalCount }}개 지역 표시</strong>
     </footer>
   </section>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 
 const configStore = useConfigStore()
 

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import SettingsToolbar from '@/components/SettingsToolbar.vue'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getVisual } from '@/utils/weatherVisuals.js'
 
@@ -12,17 +12,21 @@ const weatherStore = useWeatherStore()
 configStore.load()
 weatherStore.load()
 
+/* Auto Hide Header 구현용 */
 const isHeaderHidden = ref(false)
 const hasKeyboardFocus = ref(false)
 let previousScrollY = 0
 let scrollFrameId = null
+
 const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path))
+// 기본 지역 계산용
 const defaultWeather = computed(
   () =>
     weatherStore.weatherList.find((weather) => weather.id === configStore.primaryId) ??
     weatherStore.weatherList[0] ??
     null,
 )
+// Dynamic 배경 계산용
 const canvasWeather = computed(() => {
   if (route.name === 'detail') {
     return weatherStore.weather(route.params.id) ?? defaultWeather.value
@@ -34,6 +38,7 @@ const canvasStyle = computed(() => ({
   '--weather-background-image': `url("${weatherCanvas.value.background}")`,
 }))
 
+/* Auto Hide Header 구현용 */
 const updateHeader = () => {
   const currentScrollY = window.scrollY
   const scrollDistance = currentScrollY - previousScrollY
@@ -80,6 +85,7 @@ onBeforeUnmount(stopHeaderScroll)
 
 <template>
   <div class="app-shell" :class="weatherCanvas.tone" :style="canvasStyle">
+    <!-- Header -->
     <header
       class="app-header"
       :class="{ 'is-hidden': isHeaderHidden && !hasKeyboardFocus }"
@@ -88,30 +94,31 @@ onBeforeUnmount(stopHeaderScroll)
       @focusout="handleHeaderFocusout"
     >
       <div class="header-inner weather-surface">
+        <!-- Router Navigation -->
         <div class="brand-navigation">
-          <RouterLink class="brand" :to="{ name: 'home' }" aria-label="Weather Board 홈">
+          <RouterLink class="brand" :to="{ name: 'home' }" aria-label="오늘의 날씨 홈">
             <span class="brand-mark" aria-hidden="true">☁</span>
             <span>오늘의 날씨</span>
           </RouterLink>
 
           <nav class="main-nav" aria-label="주요 메뉴">
             <RouterLink class="nav-link" :class="{ 'is-active': activeMenu === '/' }" to="/">
-              날씨
+              날씨 홈
             </RouterLink>
             <RouterLink
               class="nav-link"
               :class="{ 'is-active': activeMenu === '/about' }"
               to="/about"
             >
-              도움말
+              서비스 소개
             </RouterLink>
           </nav>
         </div>
-
+        <!-- Setting Toolbar -->
         <SettingsToolbar />
       </div>
     </header>
-
+    <!-- Main Content -->
     <main class="app-container">
       <RouterView />
     </main>

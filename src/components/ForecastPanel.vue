@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { getVisual } from '@/utils/weatherVisuals.js'
 
 const props = defineProps({
@@ -103,7 +103,7 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   <section class="forecast-panel weather-surface" :class="{ 'is-compact': compact }">
     <header class="forecast-heading">
       <div>
-        <p>OPEN-METEO FORECAST</p>
+        <p>FORECAST</p>
         <h2>{{ compact ? '대표 지역 예보' : '시간별 · 주간 예보' }}</h2>
       </div>
       <div class="forecast-heading-actions">
@@ -129,8 +129,8 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
     <template v-else-if="forecast">
       <section class="forecast-section hourly-section" aria-labelledby="hourly-title">
         <div class="forecast-title-row">
-          <h3 id="hourly-title">앞으로 12시간</h3>
-          <span class="forecast-range-meta">현재 시각 이후 · 1시간 간격</span>
+          <h3 id="hourly-title">시간별 예보</h3>
+          <span class="forecast-range-meta">1시간 간격</span>
           <span class="mobile-scroll-cue" aria-hidden="true">좌우로 보기 →</span>
         </div>
 
@@ -193,7 +193,7 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
 
       <section class="forecast-section weekly-section" aria-labelledby="weekly-title">
         <div class="forecast-title-row">
-          <h3 id="weekly-title">주간 전망</h3>
+          <h3 id="weekly-title">주간 예보</h3>
           <span class="forecast-range-meta">최저 / 최고</span>
           <span class="mobile-scroll-cue" aria-hidden="true">좌우로 보기 →</span>
         </div>
@@ -202,7 +202,7 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
           <div
             class="daily-list"
             tabindex="0"
-            :aria-label="`${compact ? 5 : 7}일간 주간 전망. 좌우로 스크롤할 수 있습니다.`"
+            :aria-label="`${compact ? 5 : 7}일간 주간 예보. 좌우로 스크롤할 수 있습니다.`"
           >
             <article
               v-for="(day, index) in days"

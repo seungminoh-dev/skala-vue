@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { ElAlert, ElButton, ElDialog, ElEmpty, ElInput, ElTag } from 'element-plus'
+import { ElAlert, ElButton, ElDialog, ElEmpty, ElInput } from 'element-plus'
 import { current, search } from '@/services/openWeatherApi.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
@@ -72,7 +72,7 @@ const addCity = async (location) => {
   <div class="city-registration">
     <button class="city-add-card" type="button" @click="openModal">
       <span class="add-card-icon" aria-hidden="true">+</span>
-      <strong>도시 추가</strong>
+      <strong>내 도시 추가</strong>
       <span>새 지역을 검색해 등록하세요</span>
     </button>
 
@@ -88,7 +88,7 @@ const addCity = async (location) => {
     >
       <div class="registration-content">
         <p class="registration-guide">
-          OpenWeather에서 도시를 검색합니다. 정확한 결과를 위해
+          도시를 검색합니다. 정확한 결과가 나오지 않는다면
           <strong>Seoul, KR</strong>처럼 국가 코드를 함께 입력해 주세요.
         </p>
 
@@ -133,7 +133,6 @@ const addCity = async (location) => {
                 <strong>{{ location.name }}</strong>
                 <small>{{ location.region }}</small>
               </span>
-              <ElTag effect="plain">API 검색</ElTag>
               <span v-if="addingId === location.id" class="registering-label"> 등록 중 </span>
             </button>
           </li>

@@ -5,7 +5,7 @@ import { ElButton, ElMessage, ElOption, ElSelect, ElTooltip } from 'element-plus
 import ThemeModeToggle from '@/components/ThemeModeToggle.vue'
 import UnitToggler from '@/components/UnitToggler.vue'
 import { current } from '@/services/openWeatherApi.js'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
 const configStore = useConfigStore()
@@ -68,7 +68,7 @@ const addCurrentLocation = async () => {
     const weather = weatherStore.add(location, await current(location))
 
     configStore.setPrimary(weather.id)
-    ElMessage.success(`${weather.name} 날씨를 추가하고 메인 지역으로 설정했습니다.`)
+    ElMessage.success(`${weather.name} 날씨를 추가하고 대표 지역으로 설정했습니다.`)
   } catch (error) {
     ElMessage.error(locationErrorMessage(error))
   } finally {
@@ -141,12 +141,12 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOutside))
     <div id="weather-settings-panel" class="toolbar-content">
       <div class="toolbar-settings">
         <div class="setting-group primary-location-setting">
-          <span class="setting-label">메인 지역</span>
+          <span class="setting-label">대표 지역</span>
           <ElSelect
             v-model="primaryId"
             class="location-select"
             placeholder="등록 도시 없음"
-            aria-label="메인 지역 선택"
+            aria-label="대표 지역 선택"
             :disabled="weatherStore.weatherList.length === 0"
           >
             <ElOption

@@ -5,17 +5,17 @@ const features = [
   {
     icon: '⌖',
     title: '내 위치와 관심 지역',
-    description: '현재 위치나 국내·해외 도시를 등록하고 메인 지역을 지정할 수 있습니다.',
+    description: '현재 위치나 국내·해외 도시를 등록하고 대표 지역을 지정할 수 있습니다.',
   },
   {
     icon: '◷',
     title: '시간별·주간 예보',
-    description: '현재 시각 이후 12시간의 온도 흐름과 7일 예보를 확인합니다.',
+    description: '현재 시각 이후 12시간의 날씨 예보와 7일 예보를 확인합니다.',
   },
   {
     icon: '°',
     title: '개인화된 표시',
-    description: '섭씨·화씨와 Bright·Dark 화면 모드를 서비스 전체에 동일하게 적용합니다.',
+    description: '다양한 개인화된 설정을 제공합니다.',
   },
 ]
 </script>
@@ -23,11 +23,11 @@ const features = [
 <template>
   <ElCard class="about-view route-card" shadow="never" aria-labelledby="about-title">
     <section class="about-hero weather-surface">
-      <p class="about-kicker">ABOUT WEATHER BOARD</p>
-      <h1 id="about-title">필요한 지역의 날씨를<br />한 화면에서 확인하세요</h1>
+      <p class="about-kicker">ABOUT TODAY WEATHER</p>
+      <h1 id="about-title">원하는 지역의 날씨를<br />한 화면에서 확인하세요</h1>
       <p class="about-description">
-        OpenWeather 현재 날씨와 Open-Meteo 예보를 연결해, 자주 확인하는 지역을 빠르게 비교하는
-        반응형 날씨 대시보드입니다.
+        현재 날씨와 예보를 한 곳에서 확인할 수 있습니다. 자주 확인하는 지역을 등록하고, 내 지역의
+        날씨를 빠르게 확인하세요.
       </p>
     </section>
 
@@ -50,16 +50,17 @@ const features = [
     <div class="data-policy weather-surface">
       <div>
         <strong>Data policy</strong>
-        <p>등록 지역과 마지막 정상 응답은 이 브라우저의 localStorage에 저장됩니다.</p>
+        <p>교육용으로 제작되었습니다. API: OpenWeather, Open-Meteo 제공, 배경 이미지: PIXABAY</p>
       </div>
       <div class="data-tags">
-        <ElTag effect="plain">OpenWeather Current</ElTag>
+        <ElTag effect="plain">PIXABAY</ElTag>
+        <ElTag effect="plain">OpenWeather</ElTag>
         <ElTag effect="plain">Open-Meteo Forecast</ElTag>
       </div>
     </div>
 
-    <RouterLink class="home-link" :to="{ name: 'home' }">
-      <ElButton type="primary">메인 대시보드로 돌아가기</ElButton>
+    <RouterLink class="home-link route-home-link" :to="{ name: 'home' }">
+      ← 홈으로 돌아가기
     </RouterLink>
   </ElCard>
 </template>
@@ -172,9 +173,7 @@ h1 {
 }
 
 .home-link {
-  display: inline-flex;
   margin-top: 1.5rem;
-  text-decoration: none;
 }
 
 @media (max-width: 767px) {

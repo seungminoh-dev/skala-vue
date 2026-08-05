@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import ForecastPanel from '@/components/ForecastPanel.vue'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getVisual } from '@/utils/weatherVisuals.js'
 import { formatWindDirection } from '@/utils/windDirection.js'
@@ -79,14 +79,14 @@ watch(
   <ElCard class="detail-view route-card" shadow="never" aria-labelledby="detail-title">
     <template v-if="weather">
       <RouterLink class="back-link top-back-link" :to="{ name: 'home' }">
-        ← 등록 지역으로 돌아가기
+        ← 홈으로 돌아가기
       </RouterLink>
 
       <section class="weather-hero weather-surface" aria-labelledby="detail-title">
         <div class="hero-copy">
           <div class="detail-badges">
-            <ElTag v-if="isPrimary" effect="dark">메인 지역</ElTag>
-            <ElTag effect="plain">CURRENT WEATHER</ElTag>
+            <ElTag v-if="isPrimary" effect="dark">대표 지역</ElTag>
+            <ElTag effect="plain">현재 날씨</ElTag>
           </div>
           <p class="detail-region">{{ weather.region }}</p>
           <h1 id="detail-title">{{ weather.name }}</h1>
@@ -110,8 +110,8 @@ watch(
       <section class="metric-section" aria-labelledby="metric-title">
         <div class="section-heading">
           <div>
-            <p>CONDITIONS</p>
-            <h2 id="metric-title">현재 관측 지표</h2>
+            <p>SUMMARY</p>
+            <h2 id="metric-title">기상 정보</h2>
           </div>
           <span>{{ weather.status }}</span>
         </div>
@@ -136,7 +136,7 @@ watch(
         <div class="section-heading">
           <div>
             <p>DETAILS</p>
-            <h2 id="observation-title">상세 관측 정보</h2>
+            <h2 id="observation-title">상세 기상 정보</h2>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ watch(
               {{ formatDateTime(weather.sunset, weather.timezoneOffset) }}
             </span>
           </ElDescriptionsItem>
-          <ElDescriptionsItem label="데이터 갱신">
+          <ElDescriptionsItem label="정보 갱신">
             <span class="detail-item">
               {{ formatDateTime(weather.fetchedAt, weather.timezoneOffset) }}
             </span>
@@ -186,8 +186,8 @@ watch(
       </ElEmpty>
     </div>
 
-    <RouterLink class="back-link" :to="{ name: 'home' }">
-      <ElButton type="primary">메인 대시보드로 돌아가기</ElButton>
+    <RouterLink class="back-link route-home-link" :to="{ name: 'home' }">
+      ← 홈으로 돌아가기
     </RouterLink>
   </ElCard>
 </template>

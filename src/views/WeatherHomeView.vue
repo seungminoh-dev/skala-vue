@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { ElPopconfirm } from 'element-plus'
@@ -8,7 +8,7 @@ import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import CityRegistrationModal from '@/components/exercise/CityRegistrationModal.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { useWeatherStore } from '@/stores/weather.js'
 import { getVisual } from '@/utils/weatherVisuals.js'
 import { formatWindDirection } from '@/utils/windDirection.js'
@@ -75,7 +75,7 @@ const dashboardSummary = computed(() => {
     return '관심 지역을 등록하면 현재 날씨를 한눈에 비교할 수 있습니다.'
   }
 
-  return `${weatherList.value.length}개 지역의 마지막 정상 날씨를 표시하고 있습니다.`
+  return `내가 등록한 ${weatherList.value.length}개 지역의 날씨를 표시중입니다`
 })
 
 const formatNumber = (value, unit) =>
@@ -139,6 +139,17 @@ watch(
   },
   { immediate: true },
 )
+
+/* 과제용 watch/watchEffect 작성 */
+watch(selectedCityInfo, (weather, previous) => {
+  console.log(
+    `[watch] 선택 도시 변경: ${previous?.name ?? '선택 없음'} → ${weather?.name ?? '선택 없음'}`,
+  )
+})
+
+watchEffect(() => {
+  console.log(`[watchEffect] 도시 검색어 변경: ${searchQuery.value || '검색어 없음'}`)
+})
 </script>
 
 <template>
@@ -146,7 +157,7 @@ watch(
     <section class="current-weather-hero" aria-labelledby="weather-title">
       <template v-if="primaryWeather">
         <div class="location-heading-copy hero-location">
-          <p class="location-heading-kicker">MY FAVORITE LOCATION</p>
+          <p class="location-heading-kicker">FAVORITE LOCATION</p>
           <strong class="location-heading-title">{{ primaryWeather.name }}</strong>
           <span class="location-heading-meta">{{ primaryWeather.region }}</span>
         </div>
@@ -196,7 +207,7 @@ watch(
 
       <template v-else>
         <div class="empty-hero">
-          <p>WEATHER CANVAS</p>
+          <p>TODAY WEATHER</p>
           <h1 id="weather-title">내 지역의 날씨를<br />가장 먼저 만나보세요</h1>
           <span>{{ dashboardSummary }}</span>
         </div>
@@ -220,7 +231,7 @@ watch(
           <div class="section-heading">
             <div class="location-heading-copy">
               <p class="location-heading-kicker">MY LOCATIONS</p>
-              <h2 id="weather-list-title" class="location-heading-title">등록 지역</h2>
+              <h2 id="weather-list-title" class="location-heading-title">내 지역</h2>
               <p class="location-heading-meta">{{ dashboardSummary }}</p>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { current } from '@/services/openWeatherApi.js'
 import { forecast } from '@/services/openMeteoApi.js'
 
-const STORAGE_KEY = 'weather-dashboard:v2'
+const STORAGE_KEY = 'weather-dashboard:production'
 const CURRENT_TTL = 2 * 60 * 60 * 1000
 const FORECAST_TTL = 60 * 60 * 1000
 const forecastRequests = new Map()

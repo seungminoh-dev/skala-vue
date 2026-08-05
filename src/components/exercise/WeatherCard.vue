@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { useConfigStore } from '@/stores/config.js'
+import { useConfigStore } from '@/stores/configStore.js'
 import { getVisual } from '@/utils/weatherVisuals.js'
 
 const props = defineProps({
@@ -100,9 +100,11 @@ const isStale = (fetchedAt) => !fetchedAt || Date.now() - fetchedAt >= 2 * 60 * 
           온도 정보 없음
         </ElTag>
         <ElTag v-else-if="weather.temp >= 25" class="temperature-badge is-hot" effect="light">
-          더움(25도 이상)
+          🔥 더움(25도 이상)
         </ElTag>
-        <ElTag v-else class="temperature-badge is-cool" effect="light"> 선선함(25도 미만) </ElTag>
+        <ElTag v-else class="temperature-badge is-cool" effect="light">
+          ❄️ 선선함(25도 미만)
+        </ElTag>
         <ElTag v-if="isStale(weather.fetchedAt)" effect="plain" type="warning">
           업데이트 필요
         </ElTag>

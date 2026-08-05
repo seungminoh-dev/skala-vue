@@ -27,6 +27,28 @@
   margin-bottom: 1.5rem;
 }
 
+.route-home-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding-inline: 0.25rem;
+  color: var(--weather-on-panel-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: color 0.16s ease;
+}
+
+.route-home-link:hover {
+  color: var(--weather-on-panel);
+}
+
+.route-home-link:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .el-card {
   border-color: var(--border-subtle);
   background: var(--surface-raised);

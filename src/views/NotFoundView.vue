@@ -11,7 +11,6 @@ const route = useRoute()
     aria-labelledby="not-found-title"
   >
     <template #title>
-      <p class="error-code">404</p>
       <h1 id="not-found-title">페이지를 찾을 수 없습니다</h1>
     </template>
     <template #sub-title>
@@ -20,9 +19,7 @@ const route = useRoute()
       </p>
     </template>
     <template #extra>
-      <RouterLink class="home-link" :to="{ name: 'home' }">
-        <ElButton type="primary">메인 대시보드로 돌아가기</ElButton>
-      </RouterLink>
+      <RouterLink class="route-home-link" :to="{ name: 'home' }"> ← 홈으로 돌아가기 </RouterLink>
     </template>
   </ElResult>
 </template>
@@ -61,10 +58,5 @@ h1 {
   color: var(--weather-on-panel);
   font-weight: 800;
   overflow-wrap: anywhere;
-}
-
-.home-link {
-  display: inline-flex;
-  text-decoration: none;
 }
 </style>
