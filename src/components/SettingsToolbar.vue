@@ -57,11 +57,11 @@ const addCurrentLocation = async () => {
     const position = await getCurrentPosition()
     const location = {
       id: 'current-location',
-      name: '내 위치',
+      name: '내 현재 위치',
       englishName: 'Current location',
       state: '',
       country: '',
-      region: '브라우저 현재 위치',
+      region: 'GPS',
       lat: position.coords.latitude,
       lon: position.coords.longitude,
     }

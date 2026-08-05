@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
-import { ElAlert, ElButton, ElDialog, ElEmpty, ElInput } from 'element-plus'
+import { computed, ref } from 'vue'
+import { ElAlert, ElButton, ElDialog, ElEmpty, ElInput, ElTag } from 'element-plus'
 import { current, search } from '@/services/openWeatherApi.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
@@ -13,6 +13,14 @@ const results = ref([])
 const searching = ref(false)
 const addingId = ref(null)
 const feedback = ref(null)
+
+const registeredIds = computed(() => new Set(weatherStore.locationIds))
+const resultItems = computed(() =>
+  results.value.map((location) => ({
+    location,
+    registered: registeredIds.value.has(location.id),
+  })),
+)
 
 const errorMessage = (error) => {
   return error?.response?.data?.message ?? error?.message ?? '요청을 완료하지 못했습니다.'
@@ -52,6 +60,11 @@ const openModal = () => {
 }
 
 const addCity = async (location) => {
+  if (registeredIds.value.has(location.id)) {
+    feedback.value = { type: 'info', message: '이미 등록된 지역입니다.' }
+    return
+  }
+
   addingId.value = location.id
   feedback.value = null
 
@@ -121,19 +134,23 @@ const addCity = async (location) => {
           </div>
         </div>
 
-        <ul v-if="results.length" class="location-results">
-          <li v-for="location in results" :key="location.id">
+        <ul v-if="resultItems.length" class="location-results">
+          <li v-for="item in resultItems" :key="item.location.id">
             <button
               class="location-option"
+              :class="{ 'is-registered': item.registered }"
               type="button"
-              :disabled="Boolean(addingId)"
-              @click="addCity(location)"
+              :disabled="Boolean(addingId) || item.registered"
+              @click="addCity(item.location)"
             >
               <span class="location-copy">
-                <strong>{{ location.name }}</strong>
-                <small>{{ location.region }}</small>
+                <strong>{{ item.location.name }}</strong>
+                <small>{{ item.location.region }}</small>
               </span>
-              <span v-if="addingId === location.id" class="registering-label"> 등록 중 </span>
+              <ElTag :type="item.registered ? 'success' : 'info'" effect="plain">
+                {{ item.registered ? '등록됨' : '미등록' }}
+              </ElTag>
+              <span v-if="addingId === item.location.id" class="registering-label"> 등록 중 </span>
             </button>
           </li>
         </ul>
@@ -288,6 +305,7 @@ const addCity = async (location) => {
   cursor: pointer;
   transition:
     border-color 0.16s ease,
+    background-color 0.16s ease,
     transform 0.16s ease;
 }
 
@@ -303,6 +321,18 @@ const addCity = async (location) => {
 .location-option:disabled {
   cursor: default;
   opacity: 0.64;
+}
+
+.location-option.is-registered:disabled {
+  border-color: color-mix(in srgb, var(--success) 34%, var(--border-subtle));
+  background: var(--surface-muted);
+  box-shadow: inset 3px 0 0 var(--success);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.location-option.is-registered .location-copy {
+  opacity: 0.68;
 }
 
 .location-copy {
