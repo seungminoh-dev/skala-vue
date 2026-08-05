@@ -70,19 +70,15 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
 
     <ElSkeleton v-if="loading && !forecast" class="forecast-loading" :rows="3" animated />
 
-    <ElAlert
+    <button
       v-else-if="error && !forecast"
       class="forecast-error"
-      title="예보를 불러오지 못했습니다."
-      :description="error"
-      type="warning"
-      show-icon
-      :closable="false"
+      type="button"
+      :title="error"
+      @click="emit('retry')"
     >
-      <template #default>
-        <ElButton size="small" @click="emit('retry')">다시 시도</ElButton>
-      </template>
-    </ElAlert>
+      예보를 불러오지 못했습니다 · 클릭해서 다시 불러오기
+    </button>
 
     <template v-else-if="forecast">
       <section class="forecast-section" aria-labelledby="hourly-title">
@@ -203,8 +199,28 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   background: var(--weather-panel-soft);
 }
 
-.forecast-error :deep(.el-alert__content) {
-  min-width: 0;
+.forecast-error {
+  width: 100%;
+  padding: 0.7rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--weather-on-panel-faint);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.forecast-error:hover {
+  color: var(--weather-on-panel);
+}
+
+.forecast-error:focus-visible {
+  border-radius: var(--weather-radius-control);
+  outline: 2px solid var(--weather-accent-text);
+  outline-offset: 4px;
 }
 
 .forecast-title-row h3 {

@@ -61,6 +61,9 @@ Open-Meteo의 앞으로 24시간과 7일 예보입니다.
 ```
 
 예보는 상세 화면과 메인 대표 지역에서 필요할 때만 요청하며 localStorage에는 저장하지 않습니다.
+첫 예보 요청은 Open-Meteo에 직접 보내고, 한도 초과·차단·네트워크 또는 서버 오류가
+발생하면 Cloudflare Worker로 다시 요청합니다. Worker 연결이 성공하면 해당 앱 세션의
+이후 예보는 Worker를 사용합니다.
 
 ## Record
 
@@ -91,7 +94,7 @@ localStorage의 `weather-dashboard:v2`에는 `locationIds`, `locations`, `curren
 flowchart LR
   Search[지역 검색] --> Location
   Location -->|OpenWeather| Current
-  Location -->|Open-Meteo| Forecast
+  Location -->|Open-Meteo → Worker fallback| Forecast
   Location --> Record
   Current --> Record
   Forecast --> Record
@@ -101,6 +104,6 @@ flowchart LR
 | 모듈 | 공개 함수 또는 상태 | 책임 |
 | --- | --- | --- |
 | `openWeatherApi.js` | `search()`, `current()` | 지역·현재 날씨 호출과 정규화 |
-| `openMeteoApi.js` | `forecast()` | 시간별·주간 예보 호출과 정규화 |
+| `openMeteoApi.js` | `forecast()` | 직접 호출·Worker 전환과 시간별·주간 예보 정규화 |
 | `weather.js` | `load()`, `add()`, `remove()`, `refresh()`, `loadForecast()` | ID 관계, 저장, 캐시 갱신 |
 | `weatherVisuals.js` | `getVisual()` | 공통 `kind`를 아이콘·배경·필터로 변환 |

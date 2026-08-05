@@ -1,9 +1,18 @@
 import axios from 'axios'
 
-const api = axios.create({
+const directApi = axios.create({
   baseURL: 'https://api.open-meteo.com',
   timeout: 10_000,
 })
+
+const workerApi = axios.create({
+  baseURL:
+    import.meta.env.VITE_WEATHER_API_URL ||
+    'https://weather-api.seongminoh-dev.workers.dev',
+  timeout: 10_000,
+})
+
+let target = 'direct'
 
 const WMO = {
   0: ['clear', '맑음'],
@@ -41,36 +50,66 @@ const condition = (code) => {
   return { code, kind, status }
 }
 
-export const forecast = async ({ lat, lon }) => {
-  const { data } = await api.get('/v1/forecast', {
-    params: {
-      latitude: lat,
-      longitude: lon,
-      hourly: [
-        'temperature_2m',
-        'apparent_temperature',
-        'relative_humidity_2m',
-        'precipitation_probability',
-        'precipitation',
-        'weather_code',
-        'wind_speed_10m',
-        'is_day',
-      ].join(','),
-      daily: [
-        'weather_code',
-        'temperature_2m_max',
-        'temperature_2m_min',
-        'precipitation_probability_max',
-        'precipitation_sum',
-        'sunrise',
-        'sunset',
-      ].join(','),
-      timezone: 'auto',
-      forecast_hours: 24,
-      forecast_days: 7,
-      wind_speed_unit: 'ms',
-    },
-  })
+const directParams = ({ lat, lon }) => ({
+  latitude: lat,
+  longitude: lon,
+  hourly: [
+    'temperature_2m',
+    'apparent_temperature',
+    'relative_humidity_2m',
+    'precipitation_probability',
+    'precipitation',
+    'weather_code',
+    'wind_speed_10m',
+    'is_day',
+  ].join(','),
+  daily: [
+    'weather_code',
+    'temperature_2m_max',
+    'temperature_2m_min',
+    'precipitation_probability_max',
+    'precipitation_sum',
+    'sunrise',
+    'sunset',
+  ].join(','),
+  timezone: 'auto',
+  forecast_hours: 24,
+  forecast_days: 7,
+  wind_speed_unit: 'ms',
+})
+
+const canFallback = (error) => {
+  const status = error?.response?.status
+  return !status || status === 403 || status === 408 || status === 429 || status >= 500
+}
+
+const request = async (location) => {
+  if (target === 'worker') {
+    const { data } = await workerApi.get('/forecast', {
+      params: { lat: location.lat, lon: location.lon },
+    })
+    return data
+  }
+
+  try {
+    const { data } = await directApi.get('/v1/forecast', {
+      params: directParams(location),
+    })
+    return data
+  } catch (error) {
+    if (!canFallback(error)) throw error
+
+    const { data } = await workerApi.get('/forecast', {
+      params: { lat: location.lat, lon: location.lon },
+    })
+    target = 'worker'
+    console.warn('[Forecast] Open-Meteo 직접 연결 실패로 Worker를 사용합니다.')
+    return data
+  }
+}
+
+export const forecast = async (location) => {
+  const data = await request(location)
 
   const hourly = (data.hourly?.time ?? []).map((time, index) => ({
     time,
