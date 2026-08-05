@@ -1,7 +1,7 @@
-<!-- AI GENERATED CODE: OpenWeather Geocoding 검색 결과를 바로 등록하는 단순 Modal입니다. -->
 <script setup>
 import { ref } from 'vue'
 import { ElAlert, ElButton, ElDialog, ElEmpty, ElInput, ElTag } from 'element-plus'
+import { current, search } from '@/services/openWeatherApi.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
 const emit = defineEmits(['city-registered'])
@@ -9,75 +9,68 @@ const weatherStore = useWeatherStore()
 
 const dialogVisible = ref(false)
 const query = ref('')
-const searchResults = ref([])
-const isSearching = ref(false)
-const registeringKey = ref(null)
+const results = ref([])
+const searching = ref(false)
+const addingId = ref(null)
 const feedback = ref(null)
-
-const candidateKey = (candidate) =>
-  [candidate.name, candidate.country, candidate.lat, candidate.lon].join(':')
-
-const formatLocation = (candidate) =>
-  [candidate.state, candidate.country].filter(Boolean).join(' · ')
-
-const setFeedback = (type, message) => {
-  feedback.value = { type, message }
-}
 
 const errorMessage = (error) => {
   return error?.response?.data?.message ?? error?.message ?? '요청을 완료하지 못했습니다.'
 }
 
-const searchCandidates = async () => {
+const findCities = async () => {
   if (query.value.trim() && query.value.trim().length < 2) {
-    setFeedback('info', '지역 이름을 두 글자 이상 입력해 주세요.')
+    feedback.value = { type: 'info', message: '지역 이름을 두 글자 이상 입력해 주세요.' }
     return
   }
 
-  isSearching.value = true
+  searching.value = true
   feedback.value = null
 
   try {
-    searchResults.value = await weatherStore.searchLocationCandidates(query.value)
+    results.value = await search(query.value)
 
-    if (searchResults.value.length === 0) {
-      setFeedback('info', '일치하는 지역을 찾지 못했습니다. 국가 코드를 함께 입력해 보세요.')
+    if (results.value.length === 0) {
+      feedback.value = {
+        type: 'info',
+        message: '일치하는 지역을 찾지 못했습니다. 국가 코드를 함께 입력해 보세요.',
+      }
     }
   } catch (error) {
-    searchResults.value = []
-    setFeedback('error', errorMessage(error))
+    results.value = []
+    feedback.value = { type: 'error', message: errorMessage(error) }
   } finally {
-    isSearching.value = false
+    searching.value = false
   }
 }
 
-const openDialog = () => {
+const openModal = () => {
   dialogVisible.value = true
   query.value = ''
-  searchResults.value = []
+  results.value = []
   feedback.value = null
 }
 
-const registerCandidate = async (candidate) => {
-  registeringKey.value = candidateKey(candidate)
+const addCity = async (location) => {
+  addingId.value = location.id
   feedback.value = null
 
   try {
-    const result = await weatherStore.registerLocation(candidate)
+    const weather = weatherStore.add(location, await current(location))
 
-    setFeedback('success', `${result.location.name} 날씨를 등록했습니다.`)
-    emit('city-registered', result.location)
+    feedback.value = { type: 'success', message: `${weather.name} 날씨를 등록했습니다.` }
+    emit('city-registered', weather)
   } catch (error) {
-    setFeedback('error', errorMessage(error))
+    feedback.value = { type: 'error', message: errorMessage(error) }
   } finally {
-    registeringKey.value = null
+    addingId.value = null
   }
 }
 </script>
 
 <template>
   <div class="city-registration">
-    <button class="city-add-card" type="button" @click="openDialog">
+    <button class="city-add-card" type="button" @click="openModal">
       <span class="add-card-icon" aria-hidden="true">+</span>
       <strong>도시 추가</strong>
       <span>새 지역을 검색해 등록하세요</span>
@@ -89,8 +82,8 @@ const registerCandidate = async (candidate) => {
       width="min(92vw, 640px)"
       destroy-on-close
       append-to-body
-      :close-on-click-modal="!registeringKey"
-      :close-on-press-escape="!registeringKey"
+      :close-on-click-modal="!addingId"
+      :close-on-press-escape="!addingId"
     >
       <div class="registration-content">
         <p class="registration-guide">
@@ -104,10 +97,10 @@ const registerCandidate = async (candidate) => {
           placeholder="서울 또는 Tokyo, JP"
           clearable
           aria-label="등록할 도시 검색"
-          @keyup.enter="searchCandidates()"
+          @keyup.enter="findCities"
         >
           <template #append>
-            <ElButton :loading="isSearching" @click="searchCandidates()">검색</ElButton>
+            <ElButton :loading="searching" @click="findCities">검색</ElButton>
           </template>
         </ElInput>
 
@@ -123,26 +116,24 @@ const registerCandidate = async (candidate) => {
         <div class="result-heading">
           <div>
             <h3>검색 결과</h3>
-            <p>{{ searchResults.length }}개 지역</p>
+            <p>{{ results.length }}개 지역</p>
           </div>
         </div>
 
-        <ul v-if="searchResults.length" class="location-results">
-          <li v-for="candidate in searchResults" :key="candidateKey(candidate)">
+        <ul v-if="results.length" class="location-results">
+          <li v-for="location in results" :key="location.id">
             <button
               class="location-option"
               type="button"
-              :disabled="Boolean(registeringKey)"
-              @click="registerCandidate(candidate)"
+              :disabled="Boolean(addingId)"
+              @click="addCity(location)"
             >
               <span class="location-copy">
-                <strong>{{ candidate.name }}</strong>
-                <small>{{ formatLocation(candidate) }}</small>
+                <strong>{{ location.name }}</strong>
+                <small>{{ location.region }}</small>
               </span>
               <ElTag effect="plain">API 검색</ElTag>
-              <span v-if="registeringKey === candidateKey(candidate)" class="registering-label">
-                등록 중
-              </span>
+              <span v-if="addingId === location.id" class="registering-label"> 등록 중 </span>
             </button>
           </li>
         </ul>
@@ -151,9 +142,7 @@ const registerCandidate = async (candidate) => {
       </div>
 
       <template #footer>
-        <ElButton :disabled="Boolean(registeringKey)" @click="dialogVisible = false">
-          닫기
-        </ElButton>
+        <ElButton :disabled="Boolean(addingId)" @click="dialogVisible = false"> 닫기 </ElButton>
       </template>
     </ElDialog>
   </div>

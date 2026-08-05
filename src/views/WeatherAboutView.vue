@@ -1,4 +1,3 @@
-<!-- AI GENERATED CODE: 실제 데이터·설정·단순 Refresh 정책을 설명하는 Weather Board 소개 화면입니다. -->
 <script setup>
 import { RouterLink } from 'vue-router'
 
@@ -9,9 +8,9 @@ const features = [
     description: '현재 위치나 국내·해외 도시를 등록하고 메인 지역을 지정할 수 있습니다.',
   },
   {
-    icon: '↻',
-    title: '이해하기 쉬운 날씨 갱신',
-    description: '접속 시 오래된 날씨를 갱신하고 버튼으로 전체 날씨를 새로고침합니다.',
+    icon: '◷',
+    title: '시간별·주간 예보',
+    description: '대표 지역은 간단히, 상세 화면에서는 앞으로 24시간과 7일을 확인합니다.',
   },
   {
     icon: '°',
@@ -27,8 +26,8 @@ const features = [
       <p class="about-kicker">ABOUT WEATHER BOARD</p>
       <h1 id="about-title">필요한 지역의 날씨를<br />한 화면에서 확인하세요</h1>
       <p class="about-description">
-        OpenWeather의 현재 관측 데이터와 브라우저 저장소를 연결해, 자주 확인하는 지역을 빠르게
-        비교하는 반응형 날씨 대시보드입니다.
+        OpenWeather 현재 날씨와 Open-Meteo 예보를 연결해, 자주 확인하는 지역을 빠르게 비교하는
+        반응형 날씨 대시보드입니다.
       </p>
     </section>
 
@@ -53,7 +52,10 @@ const features = [
         <strong>Data policy</strong>
         <p>등록 지역과 마지막 정상 응답은 이 브라우저의 localStorage에 저장됩니다.</p>
       </div>
-      <ElTag effect="plain">OpenWeather Current Weather</ElTag>
+      <div class="data-tags">
+        <ElTag effect="plain">OpenWeather Current</ElTag>
+        <ElTag effect="plain">Open-Meteo Forecast</ElTag>
+      </div>
     </div>
 
     <RouterLink class="home-link" :to="{ name: 'home' }">
@@ -161,6 +163,12 @@ h1 {
   margin-top: 0.15rem;
   color: var(--weather-on-panel-muted);
   font-size: 12px;
+}
+
+.data-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .home-link {

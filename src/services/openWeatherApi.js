@@ -1,98 +1,92 @@
-/*
- * OpenWeather API 요청과 받아온 Location 및 Weather 객체의 정규화를 담당합니다.
- */
-
 import axios from 'axios'
 
-const apiClient = axios.create({
+const api = axios.create({
   baseURL: 'https://api.openweathermap.org',
   timeout: 10_000,
 })
 
-const getApiKey = () => import.meta.env.VITE_OPENWEATHER_API_KEY || import.meta.env.API_KEY //GET ENV API KEY
+const slug = (value) =>
+  String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-const requireApiKey = () => {
-  const apiKey = getApiKey()
-  if (!apiKey) {
-    throw new Error('OpenWeather API Key가 설정되지 않았습니다.')
-  }
-  return apiKey
+const locationId = ({ englishName, name, state, country }) => {
+  const parts = [englishName || name, state, country].map(slug).filter(Boolean)
+  return [...new Set(parts)].join('-') || 'location'
 }
 
-// 공통 Query Parameter를 포함해 OpenWeather에 요청합니다.
+const weatherKind = (main = '') => {
+  const value = main.toLocaleLowerCase()
+
+  if (value.includes('thunder')) return 'thunder'
+  if (value.includes('rain') || value.includes('drizzle')) return 'rain'
+  if (value.includes('snow')) return 'snow'
+  if (value.includes('cloud')) return 'clouds'
+  if (value.includes('clear')) return 'clear'
+  return 'mist'
+}
+
 const request = async (path, params) => {
-  const response = await apiClient.get(path, {
-    params: {
-      ...params,
-      appid: requireApiKey(),
-    },
-  })
+  const apiKey = import.meta.env.API_KEY
+  if (!apiKey) throw new Error('OpenWeather API Key가 설정되지 않았습니다.')
 
-  return response.data
+  const { data } = await api.get(path, { params: { ...params, appid: apiKey } })
+  return data
 }
 
-// Geocoding 응답에서 필요한 값만 정제하는 함수
-const normalizeLocation = (location) => ({
-  name: location.local_names?.ko ?? location.name, //한글 지역 정보가 있으면 사용
-  englishName: location.name, //없으면 기본 영어 이름 사용
-  state: location.state ?? '', //상세 지역구 정보
-  country: location.country, //국가
-  lat: location.lat, //위도
-  lon: location.lon, //경도
-})
+const mapLocation = (raw) => {
+  const location = {
+    name: raw.local_names?.ko ?? raw.name,
+    englishName: raw.name,
+    state: raw.state ?? '',
+    country: raw.country ?? '',
+    lat: Number(raw.lat),
+    lon: Number(raw.lon),
+  }
 
-// Current Weather 응답에서 필요한 값만 정제하는 함수
-const normalizeCurrentWeather = (weather) => {
-  const condition = weather.weather?.[0] ?? {}
   return {
-    temp: weather.main?.temp ?? null, //현재 온도
-    feelsLike: weather.main?.feels_like ?? null, // 체감 온도
-    status: condition.description ?? condition.main ?? '정보 없음', //한글 상태
-    statusGroup: condition.main ?? '', //영어 상태 -> 이모지 매핑이나 배경등에 사용됩니다 weatherVisual
-    icon: condition.icon ?? '', // Weather Icon : 낮/밤을 판별하는데 사용합니다
-    humidity: weather.main?.humidity ?? null, //습도
-    pressure: weather.main?.pressure ?? null, //기압
-    windSpeed: weather.wind?.speed ?? null, //풍속
-    windDegree: weather.wind?.deg ?? null, //풍향
-    visibility: weather.visibility ?? null, //가시거리
-    clouds: weather.clouds?.all ?? null, //구름량
-    rainLastHour: weather.rain?.['1h'] ?? null, //1시간 강수량
-    snowLastHour: weather.snow?.['1h'] ?? null, //1시간 적설량
-    sunset: weather.sys?.sunset ? weather.sys.sunset * 1000 : null, //일몰
-    timezoneOffset: weather.timezone ?? 0, // TIMEZONE 정보 -> 해외 도시 시간 보정용
-    fetchedAt: Date.now(), // Fetch Time 저장
-
-    // 사용하지 않는 필드 정리
-    // providerId: weather.id ?? null,
-    // providerName: weather.name ?? '',
-    // providerCountry: weather.sys?.country ?? '',
-    // tempMin: weather.main?.temp_min ?? null,
-    // tempMax: weather.main?.temp_max ?? null,
-    // description: condition.description ?? '현재 날씨 설명이 제공되지 않습니다.',
-    // windGust: weather.wind?.gust ?? null,
-    // observedAt: weather.dt ? weather.dt * 1000 : null,
-    // sunrise: weather.sys?.sunrise ? weather.sys.sunrise * 1000 : null,
+    ...location,
+    id: locationId(location),
+    region: [location.state, location.country].filter(Boolean).join(' · '),
   }
 }
 
-// 검색어 -> 지역 정보를 API 서버에 요청하는 함수
-export const searchLocations = async (query, { limit = 10 } = {}) => {
-  const locations = await request('/geo/1.0/direct', {
-    q: query,
-    limit,
-  })
+export const search = async (query) => {
+  const q = String(query ?? '').trim()
+  if (q.length < 2) return []
 
-  return locations.map(normalizeLocation)
+  const raw = await request('/geo/1.0/direct', { q, limit: 10 })
+  return raw.map(mapLocation)
 }
 
-// location -> currentWeather을 요청하는 함수
-export const getCurrentWeather = async ({ lat, lon }) => {
-  const weather = await request('/data/2.5/weather', {
+export const current = async ({ lat, lon }) => {
+  const raw = await request('/data/2.5/weather', {
     lat,
     lon,
     units: 'metric',
     lang: 'kr',
   })
+  const condition = raw.weather?.[0] ?? {}
 
-  return normalizeCurrentWeather(weather)
+  return {
+    temp: raw.main?.temp ?? null,
+    feelsLike: raw.main?.feels_like ?? null,
+    status: condition.description ?? condition.main ?? '정보 없음',
+    kind: weatherKind(condition.main),
+    night: condition.icon?.endsWith('n') ?? false,
+    humidity: raw.main?.humidity ?? null,
+    pressure: raw.main?.pressure ?? null,
+    windSpeed: raw.wind?.speed ?? null,
+    windDegree: raw.wind?.deg ?? null,
+    visibility: raw.visibility ?? null,
+    clouds: raw.clouds?.all ?? null,
+    rainLastHour: raw.rain?.['1h'] ?? null,
+    snowLastHour: raw.snow?.['1h'] ?? null,
+    sunset: raw.sys?.sunset ? raw.sys.sunset * 1000 : null,
+    timezoneOffset: raw.timezone ?? 0,
+    fetchedAt: Date.now(),
+  }
 }

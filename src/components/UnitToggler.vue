@@ -1,6 +1,4 @@
-<!-- AI GENERATED CODE: essentialCheck DAY5의 섭씨·화씨 단위 변경 UI입니다. -->
 <script setup>
-import { onMounted } from 'vue'
 import { useConfigStore } from '@/stores/config.js'
 
 const configStore = useConfigStore()
@@ -9,10 +7,6 @@ const units = [
   { value: 'celsius', label: '°C', accessibleLabel: '섭씨' },
   { value: 'fahrenheit', label: '°F', accessibleLabel: '화씨' },
 ]
-
-onMounted(() => {
-  configStore.hydrate()
-})
 </script>
 
 <template>

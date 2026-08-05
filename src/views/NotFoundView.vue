@@ -1,4 +1,3 @@
-<!-- AI GENERATED CODE: Weather Board의 Glass Surface 규칙을 적용한 Catch-all 화면입니다. -->
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
 

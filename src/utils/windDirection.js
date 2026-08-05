@@ -1,5 +1,5 @@
 /*
-  풍향을 한글로 매핑해주는 모듈입니다.
+  풍향을 포맷된 문자열로 매핑해주는 모듈입니다.
 */
 
 export const formatWindDirection = (degree, showDegree = false) => {

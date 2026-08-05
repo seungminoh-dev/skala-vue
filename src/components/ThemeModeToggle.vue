@@ -1,6 +1,5 @@
-<!-- AI GENERATED CODE: 설정 Store와 동기화되는 Bright·Dark 화면 모드 제어입니다. -->
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { Moon, Sunny } from '@element-plus/icons-vue'
 import { ElButton, ElTooltip } from 'element-plus'
 import { useConfigStore } from '@/stores/config.js'
@@ -9,10 +8,6 @@ const configStore = useConfigStore()
 const isDarkMode = computed({
   get: () => configStore.isDarkMode,
   set: (isDark) => configStore.setTheme(isDark ? 'dark' : 'bright'),
-})
-
-onMounted(() => {
-  configStore.hydrate()
 })
 </script>
 

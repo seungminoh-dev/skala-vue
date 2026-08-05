@@ -1,94 +1,73 @@
-<!-- AI GENERATED CODE: Essential 반응성을 보존한 몰입형 Weather Canvas와 등록 지역 Grid입니다. -->
 <script setup>
-import { computed, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { ElPopconfirm } from 'element-plus'
+import ForecastPanel from '@/components/ForecastPanel.vue'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import CityRegistrationModal from '@/components/exercise/CityRegistrationModal.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
-import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
+import { getVisual } from '@/utils/weatherVisuals.js'
 import { formatWindDirection } from '@/utils/windDirection.js'
 
-// Essential DAY2: 기존 반응형 변수명을 유지합니다.
 const searchQuery = ref('')
 const weatherFilter = ref('all')
-const selectedCityInfo = ref(null)
+const selectedId = ref(null)
+const forecastLoading = ref(false)
+const forecastError = ref('')
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
 const { weatherList } = storeToRefs(weatherStore)
 const router = useRouter()
 
-const getWeatherFilterGroup = (statusGroup = '') => {
-  const normalizedStatus = String(statusGroup).toLocaleLowerCase()
-
-  if (normalizedStatus.includes('clear')) return 'clear'
-  if (normalizedStatus.includes('cloud')) return 'clouds'
-  if (
-    normalizedStatus.includes('rain') ||
-    normalizedStatus.includes('drizzle') ||
-    normalizedStatus.includes('thunder')
-  ) {
-    return 'rain'
-  }
-  if (normalizedStatus.includes('snow')) return 'snow'
-  return 'other'
-}
-
-// Essential DAY2: 검색어가 비어 있으면 전체 배열, 입력 시 일치 도시만 반환합니다.
 const filteredWeatherList = computed(() => {
-  const normalizedQuery = searchQuery.value.trim().toLocaleLowerCase()
+  const query = searchQuery.value.trim().toLocaleLowerCase()
 
   return [...weatherList.value]
     .filter((weather) => {
-      const searchableLocation = [
-        weather.name,
-        weather.englishName,
-        weather.region,
-        weather.country,
-      ]
+      const location = [weather.name, weather.englishName, weather.region, weather.country]
         .filter(Boolean)
         .join(' ')
         .toLocaleLowerCase()
-      const matchesLocation = searchableLocation.includes(normalizedQuery)
-      const matchesWeather =
-        weatherFilter.value === 'all' ||
-        getWeatherFilterGroup(weather.statusGroup) === weatherFilter.value
 
-      return matchesLocation && matchesWeather
+      return (
+        location.includes(query) &&
+        (weatherFilter.value === 'all' || getVisual(weather).filter === weatherFilter.value)
+      )
     })
-    .sort((left, right) => {
-      if (left.id === configStore.primaryLocationKey) return -1
-      if (right.id === configStore.primaryLocationKey) return 1
-      return left.addedAt - right.addedAt
+    .sort((a, b) => {
+      if (a.id === configStore.primaryId) return -1
+      if (b.id === configStore.primaryId) return 1
+      return a.addedAt - b.addedAt
     })
 })
+
 const hasActiveFilters = computed(
   () => Boolean(searchQuery.value.trim()) || weatherFilter.value !== 'all',
 )
 const primaryWeather = computed(
   () =>
-    weatherList.value.find((item) => item.id === configStore.primaryLocationKey) ??
+    weatherList.value.find((weather) => weather.id === configStore.primaryId) ??
     weatherList.value[0] ??
     null,
 )
-const displayPrimaryTemp = computed(() => configStore.formatTemperature(primaryWeather.value?.temp))
-const displayPrimaryFeelsLike = computed(() =>
-  configStore.formatTemperature(primaryWeather.value?.feelsLike),
+const selectedCityInfo = computed(() =>
+  selectedId.value ? weatherStore.weather(selectedId.value) : null,
 )
-const primaryWeatherEmoji = computed(() => getWeatherEmoji(primaryWeather.value ?? {}))
+const primaryVisual = computed(() => getVisual(primaryWeather.value ?? {}))
+const displayPrimaryTemp = computed(() => configStore.formatTemp(primaryWeather.value?.temp))
 const selectedWeatherSummary = computed(() => {
   if (!selectedCityInfo.value) return ''
 
-  return `${configStore.formatTemperature(selectedCityInfo.value.temp)} · ${selectedCityInfo.value.status} · 체감 ${configStore.formatTemperature(selectedCityInfo.value.feelsLike)}`
+  return `${configStore.formatTemp(selectedCityInfo.value.temp)} · ${selectedCityInfo.value.status} · 체감 ${configStore.formatTemp(selectedCityInfo.value.feelsLike)}`
 })
 const primaryTemperatureSummary = computed(() => {
   if (!primaryWeather.value) return ''
 
-  return `현재 ${configStore.formatTemperature(primaryWeather.value.temp)} · 체감 ${displayPrimaryFeelsLike.value}`
+  return `현재 ${configStore.formatTemp(primaryWeather.value.temp)} · 체감 ${configStore.formatTemp(primaryWeather.value.feelsLike)}`
 })
 
 const dashboardSummary = computed(() => {
@@ -124,54 +103,42 @@ const formatTime = (timestamp, timezoneOffset = 0) => {
     timeZone: 'UTC',
   }).format(new Date(timestamp + timezoneOffset * 1000))
 }
-// Essential DAY1: 자식 Component가 발생시킨 이벤트를 부모 View에서 처리합니다.
-const updateSearchQuery = (content) => {
-  searchQuery.value = content
+const removeCity = (weather) => {
+  weatherStore.remove(weather.id)
+  if (selectedId.value === weather.id) selectedId.value = null
 }
-const updateWeatherFilter = (filter) => {
-  weatherFilter.value = filter
-}
-const selectCity = (city) => {
-  selectedCityInfo.value = city
-}
-const selectRegisteredCity = (city) => {
-  const registeredCity = weatherList.value.find((item) => item.id === city.id) ?? city
-  selectedCityInfo.value = registeredCity
 
-  if (!configStore.primaryLocationKey) {
-    configStore.setPrimaryLocation(registeredCity.id)
-  }
-}
-const showDetail = (city) => {
-  router.push({ name: 'detail', params: { id: city.id } })
-}
-const removeCity = (city) => {
-  weatherStore.removeLocation(city.id)
+const loadPrimaryForecast = async (force = false) => {
+  if (!primaryWeather.value) return
 
-  if (selectedCityInfo.value?.id === city.id) {
-    selectedCityInfo.value = null
-  }
+  forecastLoading.value = true
+  forecastError.value = ''
 
-  if (configStore.primaryLocationKey === city.id) {
-    configStore.setPrimaryLocation(weatherList.value[0]?.id ?? null)
+  try {
+    await weatherStore.loadForecast(primaryWeather.value.id, force)
+  } catch (error) {
+    forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+  } finally {
+    forecastLoading.value = false
   }
 }
 
-onMounted(() => {
-  configStore.hydrate()
-  weatherStore.hydrate()
-  selectedCityInfo.value =
-    weatherList.value.find((item) => item.id === configStore.primaryLocationKey) ?? null
-})
+watch(
+  () => primaryWeather.value?.id,
+  (id) => {
+    forecastError.value = ''
+    if (id) loadPrimaryForecast()
+  },
+  { immediate: true },
+)
 
-// Essential DAY2: 선택 도시와 검색어 변경을 각각 watch와 watchEffect로 감시합니다.
-watch(selectedCityInfo, (newCity, oldCity) => {
-  if (!newCity) return
-
+watch(selectedCityInfo, (weather, previous) => {
+  if (!weather || weather.id === previous?.id) return
   console.log(
-    `[Watch감지] 상태바 업데이트 : ${newCity.name}이 선택되었습니다. | ${oldCity?.name ?? '미선택'}->${newCity.name}`,
+    `[Watch감지] 상태바 업데이트 : ${weather.name}이 선택되었습니다. | ${previous?.name ?? '미선택'}->${weather.name}`,
   )
 })
+
 watchEffect(() => {
   console.log(
     `[WatchEffect] 검색어 변경이 감지되었습니다. ${searchQuery.value}에 해당하는 Filter Updated`,
@@ -198,7 +165,7 @@ watchEffect(() => {
                 role="img"
                 :aria-label="`${primaryWeather.status} 날씨`"
               >
-                {{ primaryWeatherEmoji }}
+                {{ primaryVisual.emoji }}
               </span>
             </div>
             <h1 id="weather-title">{{ primaryWeather.status }}</h1>
@@ -213,7 +180,9 @@ watchEffect(() => {
           </div>
           <div>
             <dt><span aria-hidden="true">↝</span> 바람</dt>
-            <dd>{{ formatWind(primaryWeather.windSpeed, primaryWeather.windDegree) }}</dd>
+            <dd>
+              {{ formatWind(primaryWeather.windSpeed, primaryWeather.windDegree) }}
+            </dd>
           </div>
           <div>
             <dt><span aria-hidden="true">☂</span> 강수 / 적설</dt>
@@ -223,7 +192,9 @@ watchEffect(() => {
           </div>
           <div>
             <dt><span aria-hidden="true">◒</span> 일몰</dt>
-            <dd>{{ formatTime(primaryWeather.sunset, primaryWeather.timezoneOffset) }}</dd>
+            <dd>
+              {{ formatTime(primaryWeather.sunset, primaryWeather.timezoneOffset) }}
+            </dd>
           </div>
         </dl>
       </template>
@@ -236,6 +207,17 @@ watchEffect(() => {
         </div>
       </template>
     </section>
+
+    <ForecastPanel
+      v-if="primaryWeather"
+      class="home-forecast"
+      :forecast="primaryWeather.forecast"
+      :loading="forecastLoading"
+      :error="forecastError"
+      :detail-id="primaryWeather.id"
+      compact
+      @retry="loadPrimaryForecast(true)"
+    />
 
     <ElSpace class="dashboard-content" direction="vertical" :size="24" fill>
       <BaseDashboardCard class="list-panel">
@@ -254,24 +236,24 @@ watchEffect(() => {
               :weather-filter="weatherFilter"
               :result-count="filteredWeatherList.length"
               :total-count="weatherList.length"
-              @update-query="updateSearchQuery"
-              @update-weather-filter="updateWeatherFilter"
+              @update-query="searchQuery = $event"
+              @update-weather-filter="weatherFilter = $event"
             />
           </div>
 
           <div v-if="filteredWeatherList.length > 0 || !hasActiveFilters" class="weather-list">
             <WeatherCard
-              v-for="item in filteredWeatherList"
-              :key="item.id"
-              :city="item"
-              :is-selected="selectedCityInfo?.id === item.id"
-              :is-primary="configStore.primaryLocationKey === item.id"
-              @select-card="selectCity"
-              @click-detail="showDetail"
+              v-for="weather in filteredWeatherList"
+              :key="weather.id"
+              :weather="weather"
+              :is-selected="selectedId === weather.id"
+              :is-primary="configStore.primaryId === weather.id"
+              @select-card="selectedId = $event.id"
+              @click-detail="router.push({ name: 'detail', params: { id: $event.id } })"
             />
             <CityRegistrationModal
               v-if="!hasActiveFilters"
-              @city-registered="selectRegisteredCity"
+              @city-registered="selectedId = $event.id"
             />
           </div>
           <ElEmpty
@@ -464,6 +446,10 @@ watchEffect(() => {
 
 .dashboard-content {
   width: 100%;
+}
+
+.home-forecast {
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
 }
 
 .section-heading {

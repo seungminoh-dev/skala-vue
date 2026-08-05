@@ -1,24 +1,21 @@
-<!-- AI GENERATED CODE: 메인 설정 단위와 실제 OpenWeather JSON을 반영한 상세 Weather Report입니다. -->
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import ForecastPanel from '@/components/ForecastPanel.vue'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
-import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
+import { getVisual } from '@/utils/weatherVisuals.js'
 import { formatWindDirection } from '@/utils/windDirection.js'
 
 const route = useRoute()
 const weatherStore = useWeatherStore()
 const configStore = useConfigStore()
-weatherStore.hydrate()
-configStore.hydrate()
+const forecastLoading = ref(false)
+const forecastError = ref('')
 
-// 기존 제출 변수명 weather를 유지합니다.
-const weather = computed(
-  () => weatherStore.weatherList.find((item) => item.id === route.params.id) ?? null,
-)
-const isPrimary = computed(() => configStore.primaryLocationKey === weather.value?.id)
-const weatherEmoji = computed(() => getWeatherEmoji(weather.value ?? {}))
+const weather = computed(() => weatherStore.weather(route.params.id))
+const isPrimary = computed(() => configStore.primaryId === weather.value?.id)
+const visual = computed(() => getVisual(weather.value ?? {}))
 const detailMetrics = computed(() => {
   if (!weather.value) return []
 
@@ -32,7 +29,7 @@ const detailMetrics = computed(() => {
 
 const formatNumber = (value, unit = '') =>
   value === null || value === undefined ? '정보 없음' : `${value}${unit}`
-const displayTemperature = (value) => configStore.formatTemperature(value)
+const displayTemperature = (value) => configStore.formatTemp(value)
 const formatVisibility = (value) =>
   value === null || value === undefined ? '정보 없음' : `${(value / 1000).toFixed(1)}km`
 const formatPrecipitation = (value, type) =>
@@ -49,6 +46,30 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
     timeZone: 'UTC',
   }).format(new Date(timestamp + timezoneOffset * 1000))
 }
+
+const loadForecast = async (force = false) => {
+  if (!weather.value) return
+
+  forecastLoading.value = true
+  forecastError.value = ''
+
+  try {
+    await weatherStore.loadForecast(weather.value.id, force)
+  } catch (error) {
+    forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+  } finally {
+    forecastLoading.value = false
+  }
+}
+
+watch(
+  () => weather.value?.id,
+  (id) => {
+    forecastError.value = ''
+    if (id) loadForecast()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -74,7 +95,7 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 
         <div class="hero-weather">
           <span class="weather-icon" role="img" :aria-label="`${weather.status} 날씨`">
-            {{ weatherEmoji }}
+            {{ visual.emoji }}
           </span>
           <strong>{{ displayTemperature(weather.temp) }}</strong>
           <span class="feels-like-temperature"
@@ -143,6 +164,14 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
           </ElDescriptionsItem>
         </ElDescriptions>
       </section>
+
+      <ForecastPanel
+        class="detail-forecast"
+        :forecast="weather.forecast"
+        :loading="forecastLoading"
+        :error="forecastError"
+        @retry="loadForecast(true)"
+      />
     </template>
 
     <div v-else class="empty-state weather-surface">
@@ -243,6 +272,10 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 
 .metric-section,
 .observation-section {
+  margin-top: 1.25rem;
+}
+
+.detail-forecast {
   margin-top: 1.25rem;
 }
 

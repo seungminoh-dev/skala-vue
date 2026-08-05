@@ -1,9 +1,8 @@
-<!-- AI GENERATED CODE: Essential의 :value/@input 한글 검색을 유지한 서비스형 SearchBar입니다. -->
 <script setup>
 import { computed } from 'vue'
 import { ElOption, ElSelect } from 'element-plus'
 
-const WEATHER_FILTER_OPTIONS = [
+const filters = [
   { value: 'all', label: '전체 날씨' },
   { value: 'clear', label: '맑음' },
   { value: 'clouds', label: '흐림' },
@@ -33,20 +32,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update-query', 'update-weather-filter'])
 const selectedWeatherLabel = computed(
-  () =>
-    WEATHER_FILTER_OPTIONS.find((option) => option.value === props.weatherFilter)?.label ??
-    '전체 날씨',
+  () => filters.find((option) => option.value === props.weatherFilter)?.label ?? '전체 날씨',
 )
-
-const changeSearchQuery = (event) => {
-  // AI CODE: 네이티브 input 이벤트로 한글 IME 조합 중인 값도 즉시 부모에 전달합니다.
-  emit('update-query', event.target.value)
-}
-const changeWeatherFilter = (value) => emit('update-weather-filter', value)
 </script>
 
 <template>
-  <!-- AI CODE: 한글 조합 단계까지 반응하도록 검색 영역만 네이티브 HTML로 구성합니다. -->
   <section id="weather-search" class="weather-search" aria-label="등록 지역 검색">
     <div class="control-row">
       <div class="control-field">
@@ -59,7 +49,7 @@ const changeWeatherFilter = (value) => emit('update-weather-filter', value)
           placeholder="도시·지역·국가 검색"
           autocomplete="off"
           :value="searchQuery"
-          @input="changeSearchQuery"
+          @input="emit('update-query', $event.target.value)"
         />
       </div>
 
@@ -70,10 +60,10 @@ const changeWeatherFilter = (value) => emit('update-weather-filter', value)
           class="weather-filter-select"
           :model-value="weatherFilter"
           aria-label="날씨 조건 필터"
-          @update:model-value="changeWeatherFilter"
+          @update:model-value="emit('update-weather-filter', $event)"
         >
           <ElOption
-            v-for="option in WEATHER_FILTER_OPTIONS"
+            v-for="option in filters"
             :key="option.value"
             :label="option.label"
             :value="option.value"

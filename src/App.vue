@@ -2,41 +2,38 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import SettingsToolbar from '@/components/SettingsToolbar.vue'
-/* Pinia Store -> Config(설정), Weather(날씨) */
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
-import { resolveWeatherCanvas } from '@/utils/weatherVisuals.js'
+import { getVisual } from '@/utils/weatherVisuals.js'
 
 const route = useRoute()
-/* Pinia Store */
 const configStore = useConfigStore()
 const weatherStore = useWeatherStore()
+configStore.load()
+weatherStore.load()
+
 const isHeaderHidden = ref(false)
 let previousScrollY = 0
 let scrollFrameId = null
-const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path)) // 세부 날씨 사이트는 RouteLink에 없으므로 UI보정용
-const primaryWeather = computed(
+const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path))
+const defaultWeather = computed(
   () =>
-    weatherStore.weatherList.find((item) => item.id === configStore.primaryLocationKey) ??
+    weatherStore.weatherList.find((weather) => weather.id === configStore.primaryId) ??
     weatherStore.weatherList[0] ??
     null,
 )
 const canvasWeather = computed(() => {
   if (route.name === 'detail') {
-    return (
-      weatherStore.weatherList.find((item) => item.id === route.params.id) ?? primaryWeather.value
-    )
+    return weatherStore.weather(route.params.id) ?? defaultWeather.value
   }
-
-  return primaryWeather.value
+  return defaultWeather.value
 })
-const weatherCanvas = computed(() => resolveWeatherCanvas(canvasWeather.value))
+const weatherCanvas = computed(() => getVisual(canvasWeather.value ?? {}))
 const canvasStyle = computed(() => ({
   '--weather-background-image': `url("${weatherCanvas.value.background}")`,
 }))
 
-// AI CODE: Auto Hide Header 구현
-const updateAutoHideHeader = () => {
+const updateHeader = () => {
   const currentScrollY = window.scrollY
   const scrollDistance = currentScrollY - previousScrollY
 
@@ -52,15 +49,10 @@ const updateAutoHideHeader = () => {
 
 const handleHeaderScroll = () => {
   if (scrollFrameId !== null) return
-  scrollFrameId = window.requestAnimationFrame(updateAutoHideHeader)
+  scrollFrameId = window.requestAnimationFrame(updateHeader)
 }
 
-const startAutoHideHeader = () => {
-  previousScrollY = window.scrollY
-  window.addEventListener('scroll', handleHeaderScroll, { passive: true })
-}
-
-const stopAutoHideHeader = () => {
+const stopHeaderScroll = () => {
   window.removeEventListener('scroll', handleHeaderScroll)
 
   if (scrollFrameId !== null) {
@@ -69,13 +61,12 @@ const stopAutoHideHeader = () => {
 }
 
 onMounted(async () => {
-  configStore.hydrate()
-  weatherStore.hydrate()
-  startAutoHideHeader()
-  await weatherStore.refreshStaleWeather()
+  previousScrollY = window.scrollY
+  window.addEventListener('scroll', handleHeaderScroll, { passive: true })
+  await weatherStore.refresh({ staleOnly: true })
 })
 
-onBeforeUnmount(stopAutoHideHeader)
+onBeforeUnmount(stopHeaderScroll)
 </script>
 
 <template>
@@ -253,24 +244,6 @@ onBeforeUnmount(stopAutoHideHeader)
   padding: clamp(0.75rem, 1vw, 1rem) 0 2.5rem;
 }
 
-.app-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  width: min(calc(100% - var(--layout-edge-space)), var(--layout-max-width));
-  margin: 0 auto 1.5rem;
-  padding: 0.8rem 1rem;
-  border-radius: var(--weather-radius-control);
-  color: var(--weather-on-panel-muted);
-  font-size: 12px;
-}
-
-.app-footer a {
-  color: var(--weather-on-panel);
-  font-weight: 700;
-  text-decoration: none;
-}
-
 @media (max-width: 1023px) {
   .app-header {
     position: relative;
@@ -294,10 +267,6 @@ onBeforeUnmount(stopAutoHideHeader)
 
   .brand {
     font-size: 15px;
-  }
-
-  .app-footer {
-    flex-direction: column;
   }
 }
 </style>

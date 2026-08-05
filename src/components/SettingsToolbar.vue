@@ -1,10 +1,10 @@
-<!-- AI GENERATED CODE: 내 위치·메인 지역·온도 단위·화면 모드를 한곳에서 제어하는 설정 Toolbar입니다. -->
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Aim, Refresh } from '@element-plus/icons-vue'
 import { ElButton, ElMessage, ElOption, ElSelect, ElTooltip } from 'element-plus'
 import ThemeModeToggle from '@/components/ThemeModeToggle.vue'
 import UnitToggler from '@/components/UnitToggler.vue'
+import { current } from '@/services/openWeatherApi.js'
 import { useConfigStore } from '@/stores/config.js'
 import { useWeatherStore } from '@/stores/weather.js'
 
@@ -13,10 +13,9 @@ const weatherStore = useWeatherStore()
 const isLocating = ref(false)
 const isRefreshing = ref(false)
 
-const locationOptions = computed(() => weatherStore.weatherList)
-const primaryLocationKey = computed({
-  get: () => configStore.primaryLocationKey,
-  set: (locationKey) => configStore.setPrimaryLocation(locationKey),
+const primaryId = computed({
+  get: () => configStore.primaryId,
+  set: (id) => configStore.setPrimary(id),
 })
 
 const getCurrentPosition = () =>
@@ -49,23 +48,25 @@ const locationErrorMessage = (error) => {
   return error?.message ?? '내 위치를 등록하지 못했습니다.'
 }
 
-const registerCurrentLocation = async () => {
+const addCurrentLocation = async () => {
   isLocating.value = true
 
   try {
     const position = await getCurrentPosition()
-    const result = await weatherStore.registerLocation({
+    const location = {
+      id: 'current-location',
       name: '내 위치',
       englishName: 'Current location',
+      state: '',
       country: '',
+      region: '브라우저 현재 위치',
       lat: position.coords.latitude,
       lon: position.coords.longitude,
-      accuracy: position.coords.accuracy,
-      source: 'geolocation',
-    })
+    }
+    const weather = weatherStore.add(location, await current(location))
 
-    configStore.setPrimaryLocation(result.location.id)
-    ElMessage.success(`${result.location.name} 날씨를 추가하고 메인 지역으로 설정했습니다.`)
+    configStore.setPrimary(weather.id)
+    ElMessage.success(`${weather.name} 날씨를 추가하고 메인 지역으로 설정했습니다.`)
   } catch (error) {
     ElMessage.error(locationErrorMessage(error))
   } finally {
@@ -73,7 +74,7 @@ const registerCurrentLocation = async () => {
   }
 }
 
-const refreshAllWeather = async () => {
+const refreshWeather = async () => {
   if (weatherStore.weatherList.length === 0) {
     ElMessage.info('새로고침할 등록 도시가 없습니다.')
     return
@@ -82,7 +83,7 @@ const refreshAllWeather = async () => {
   isRefreshing.value = true
 
   try {
-    const result = await weatherStore.refreshAllWeather()
+    const result = await weatherStore.refresh()
 
     if (result.failed === 0) {
       ElMessage.success(`${result.success}개 도시의 날씨를 새로고침했습니다.`)
@@ -96,32 +97,17 @@ const refreshAllWeather = async () => {
 }
 
 watch(
-  [locationOptions, () => configStore.hydrated, () => weatherStore.hydrated],
-  ([locations]) => {
-    if (!configStore.hydrated || !weatherStore.hydrated) {
+  () => [...weatherStore.locationIds],
+  (ids) => {
+    if (ids.length === 0) {
+      configStore.setPrimary(null)
       return
     }
 
-    if (locations.length === 0) {
-      configStore.setPrimaryLocation(null)
-      return
-    }
-
-    const hasPrimaryLocation = locations.some(
-      (location) => location.id === configStore.primaryLocationKey,
-    )
-
-    if (!hasPrimaryLocation) {
-      configStore.setPrimaryLocation(locations[0].id)
-    }
+    if (!ids.includes(configStore.primaryId)) configStore.setPrimary(ids[0])
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  configStore.hydrate()
-  weatherStore.hydrate()
-})
 </script>
 
 <template>
@@ -130,17 +116,17 @@ onMounted(() => {
       <div class="setting-group primary-location-setting">
         <span class="setting-label">메인 지역</span>
         <ElSelect
-          v-model="primaryLocationKey"
+          v-model="primaryId"
           class="location-select"
           placeholder="등록 도시 없음"
           aria-label="메인 지역 선택"
-          :disabled="locationOptions.length === 0"
+          :disabled="weatherStore.weatherList.length === 0"
         >
           <ElOption
-            v-for="location in locationOptions"
-            :key="location.id"
-            :label="location.name"
-            :value="location.id"
+            v-for="weather in weatherStore.weatherList"
+            :key="weather.id"
+            :label="weather.name"
+            :value="weather.id"
           />
         </ElSelect>
       </div>
@@ -158,7 +144,7 @@ onMounted(() => {
           :loading="isLocating"
           plain
           aria-label="내 위치 등록"
-          @click="registerCurrentLocation"
+          @click="addCurrentLocation"
         >
           <Aim class="action-icon" aria-hidden="true" />
         </ElButton>
@@ -170,7 +156,7 @@ onMounted(() => {
           :loading="isRefreshing"
           plain
           aria-label="전체 날씨 새로고침"
-          @click="refreshAllWeather"
+          @click="refreshWeather"
         >
           <Refresh class="action-icon" aria-hidden="true" />
         </ElButton>

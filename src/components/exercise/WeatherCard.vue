@@ -1,11 +1,10 @@
-<!-- AI GENERATED CODE: Essential 이벤트를 보존한 실제 서비스형 Grid 날씨 카드입니다. -->
 <script setup>
 import { computed } from 'vue'
 import { useConfigStore } from '@/stores/config.js'
-import { getWeatherEmoji } from '@/utils/weatherVisuals.js'
+import { getVisual } from '@/utils/weatherVisuals.js'
 
 const props = defineProps({
-  city: {
+  weather: {
     type: Object,
     default: () => ({ id: 'city_unknown', name: 'Unknown', temp: 0, status: 'Unknown' }),
   },
@@ -22,20 +21,9 @@ const props = defineProps({
 const emit = defineEmits(['select-card', 'click-detail'])
 const configStore = useConfigStore()
 
-// Essential DAY5: 원본 섭씨값을 설정 단위에 맞게 표시합니다.
-const displayTemp = computed(() => configStore.formatTemperature(props.city.temp))
-const displayFeelsLike = computed(() => configStore.formatTemperature(props.city.feelsLike))
-const weatherEmoji = computed(() => getWeatherEmoji(props.city))
-const conditionClass = computed(() => {
-  const statusGroup = props.city.statusGroup?.toLocaleLowerCase() ?? ''
-
-  if (statusGroup.includes('thunder')) return 'condition-thunder'
-  if (statusGroup.includes('rain') || statusGroup.includes('drizzle')) return 'condition-rain'
-  if (statusGroup.includes('snow')) return 'condition-snow'
-  if (statusGroup.includes('mist') || statusGroup.includes('fog')) return 'condition-mist'
-  if (statusGroup.includes('cloud')) return 'condition-clouds'
-  return 'condition-clear'
-})
+const displayTemp = computed(() => configStore.formatTemp(props.weather.temp))
+const displayFeelsLike = computed(() => configStore.formatTemp(props.weather.feelsLike))
+const visual = computed(() => getVisual(props.weather))
 
 const formatUpdatedAt = (timestamp) => {
   if (!timestamp) {
@@ -54,40 +42,40 @@ const formatMetric = (value, unit) =>
   value === null || value === undefined ? '정보 없음' : `${value}${unit}`
 
 const isStale = (fetchedAt) => !fetchedAt || Date.now() - fetchedAt >= 2 * 60 * 60 * 1000
-const selectCard = (city) => emit('select-card', city)
-const clickDetail = (city) => emit('click-detail', city)
 </script>
 
 <template>
   <ElCard
     class="weather-location-card weather-surface"
-    :class="[conditionClass, { 'is-selected': isSelected }]"
+    :class="[visual.condition, { 'is-selected': isSelected }]"
     shadow="never"
     :aria-pressed="isSelected"
     tabindex="0"
-    @click="selectCard(city)"
-    @keydown.enter.self.prevent="selectCard(city)"
-    @keydown.space.self.prevent="selectCard(city)"
+    @click="emit('select-card', weather)"
+    @keydown.enter.self.prevent="emit('select-card', weather)"
+    @keydown.space.self.prevent="emit('select-card', weather)"
   >
     <article class="weather-card-content">
       <header class="card-header">
         <div class="location-copy">
           <div class="location-heading">
-            <h3 class="city-name">{{ city.name }}</h3>
+            <h3 class="city-name">{{ weather.name }}</h3>
             <ElTag v-if="isPrimary" class="primary-badge" effect="plain">메인</ElTag>
           </div>
-          <p class="region-name">{{ city.region || city.country || '등록 위치' }}</p>
+          <p class="region-name">
+            {{ weather.region || weather.country || '등록 위치' }}
+          </p>
         </div>
 
-        <span class="weather-icon" role="img" :aria-label="`${city.status} 날씨`">
-          {{ weatherEmoji }}
+        <span class="weather-icon" role="img" :aria-label="`${weather.status} 날씨`">
+          {{ visual.emoji }}
         </span>
       </header>
 
       <div class="temperature-block">
         <strong class="current-temp">{{ displayTemp }}</strong>
         <div>
-          <p class="weather-status-text">{{ city.status }}</p>
+          <p class="weather-status-text">{{ weather.status }}</p>
           <p class="feels-like">체감 {{ displayFeelsLike }}</p>
         </div>
       </div>
@@ -95,32 +83,34 @@ const clickDetail = (city) => emit('click-detail', city)
       <dl class="weather-metrics">
         <div>
           <dt>습도</dt>
-          <dd>{{ formatMetric(city.humidity, '%') }}</dd>
+          <dd>{{ formatMetric(weather.humidity, '%') }}</dd>
         </div>
         <div>
           <dt>풍속</dt>
-          <dd>{{ formatMetric(city.windSpeed, 'm/s') }}</dd>
+          <dd>{{ formatMetric(weather.windSpeed, 'm/s') }}</dd>
         </div>
         <div>
           <dt>구름</dt>
-          <dd>{{ formatMetric(city.clouds, '%') }}</dd>
+          <dd>{{ formatMetric(weather.clouds, '%') }}</dd>
         </div>
       </dl>
 
       <div class="status-row">
-        <ElTag v-if="city.temp === null || city.temp === undefined" effect="plain">
+        <ElTag v-if="weather.temp === null || weather.temp === undefined" effect="plain">
           온도 정보 없음
         </ElTag>
-        <ElTag v-else-if="city.temp >= 25" class="temperature-badge is-hot" effect="light">
+        <ElTag v-else-if="weather.temp >= 25" class="temperature-badge is-hot" effect="light">
           더움(25도 이상)
         </ElTag>
         <ElTag v-else class="temperature-badge is-cool" effect="light"> 선선함(25도 미만) </ElTag>
-        <ElTag v-if="isStale(city.fetchedAt)" effect="plain" type="warning"> 업데이트 필요 </ElTag>
+        <ElTag v-if="isStale(weather.fetchedAt)" effect="plain" type="warning">
+          업데이트 필요
+        </ElTag>
       </div>
 
       <footer class="card-footer">
-        <span class="updated-at">{{ formatUpdatedAt(city.fetchedAt) }} 업데이트</span>
-        <ElButton class="detail-button" type="primary" @click.stop="clickDetail(city)">
+        <span class="updated-at">{{ formatUpdatedAt(weather.fetchedAt) }} 업데이트</span>
+        <ElButton class="detail-button" type="primary" @click.stop="emit('click-detail', weather)">
           상세 보기
         </ElButton>
       </footer>

@@ -1,19 +1,15 @@
-// AI GENERATED CODE: 온도 단위·화면 테마·메인 지역을 localStorage와 동기화하는 Config Store입니다.
-
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'weather-dashboard:settings:v1'
-const AVAILABLE_UNITS = new Set(['celsius', 'fahrenheit'])
-const AVAILABLE_THEMES = new Set(['bright', 'dark'])
-
-const hasWindow = () => typeof window !== 'undefined'
+const STORAGE_KEY = 'weather-dashboard:settings:v2'
+const UNITS = new Set(['celsius', 'fahrenheit'])
+const THEMES = new Set(['bright', 'dark'])
 
 export const useConfigStore = defineStore('config', {
   state: () => ({
     unit: 'celsius',
     theme: 'bright',
-    primaryLocationKey: null,
-    hydrated: false,
+    primaryId: null,
+    loaded: false,
   }),
 
   getters: {
@@ -22,97 +18,73 @@ export const useConfigStore = defineStore('config', {
   },
 
   actions: {
-    hydrate() {
-      if (this.hydrated) {
-        this.applyTheme()
-        return
-      }
-
-      if (!hasWindow()) {
-        this.hydrated = true
-        return
-      }
+    load() {
+      if (this.loaded) return
 
       try {
-        const snapshot = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null')
+        const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null')
 
-        if (AVAILABLE_UNITS.has(snapshot?.unit)) {
-          this.unit = snapshot.unit
-        }
-
-        if (AVAILABLE_THEMES.has(snapshot?.theme)) {
-          this.theme = snapshot.theme
+        if (UNITS.has(saved?.unit)) this.unit = saved.unit
+        if (THEMES.has(saved?.theme)) {
+          this.theme = saved.theme
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           this.theme = 'dark'
         }
 
-        this.primaryLocationKey = snapshot?.primaryLocationKey ?? null
-      } catch {
-        this.primaryLocationKey = null
+        this.primaryId = saved?.primaryId ?? null
+      } catch (error) {
+        console.error('[Config] 설정을 읽지 못했습니다.', error)
       } finally {
-        this.hydrated = true
+        this.loaded = true
         this.applyTheme()
       }
     },
 
-    persist() {
-      if (!hasWindow()) {
-        return
+    save() {
+      try {
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            unit: this.unit,
+            theme: this.theme,
+            primaryId: this.primaryId,
+          }),
+        )
+      } catch (error) {
+        console.error('[Config] 설정을 저장하지 못했습니다.', error)
       }
-
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          unit: this.unit,
-          theme: this.theme,
-          primaryLocationKey: this.primaryLocationKey,
-        }),
-      )
     },
 
     setUnit(unit) {
-      if (!AVAILABLE_UNITS.has(unit)) {
-        return
-      }
-
+      if (!UNITS.has(unit)) return
       this.unit = unit
-      this.persist()
+      this.save()
     },
 
     setTheme(theme) {
-      if (!AVAILABLE_THEMES.has(theme)) {
-        return
-      }
-
+      if (!THEMES.has(theme)) return
       this.theme = theme
       this.applyTheme()
-      this.persist()
+      this.save()
+    },
+
+    setPrimary(id) {
+      this.primaryId = id || null
+      this.save()
     },
 
     applyTheme() {
-      if (!hasWindow()) {
-        return
-      }
-
-      const isDark = this.theme === 'dark'
       document.documentElement.dataset.theme = this.theme
-      document.documentElement.classList.toggle('dark', isDark)
+      document.documentElement.classList.toggle('dark', this.theme === 'dark')
     },
 
-    setPrimaryLocation(locationKey) {
-      this.primaryLocationKey = locationKey || null
-      this.persist()
-    },
-
-    formatTemperature(value, { digits = 0 } = {}) {
+    formatTemp(value, digits = 0) {
       if (value === null || value === undefined || Number.isNaN(Number(value))) {
         return '정보 없음'
       }
 
-      const convertedValue =
-        this.unit === 'fahrenheit' ? (Number(value) * 9) / 5 + 32 : Number(value)
-
-      return `${convertedValue.toFixed(digits)}${this.unitSymbol}`
+      const temp = this.unit === 'fahrenheit' ? (Number(value) * 9) / 5 + 32 : Number(value)
+      return `${temp.toFixed(digits)}${this.unitSymbol}`
     },
   },
 })
