@@ -54,7 +54,6 @@ export const getVisual = (weather = {}) => {
   if (Number(weather.temp) >= HEAT_THRESHOLD) {
     return {
       ...visuals.clear,
-      emoji: '🌞',
       background: heatwaveBackground,
       tone: 'weather-tone-heat',
     }
