@@ -127,60 +127,62 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
     </button>
 
     <template v-else-if="forecast">
-      <section class="forecast-section" aria-labelledby="hourly-title">
+      <section class="forecast-section hourly-section" aria-labelledby="hourly-title">
         <div class="forecast-title-row">
           <h3 id="hourly-title">앞으로 12시간</h3>
-          <span>현재 시각 이후 · 1시간 간격</span>
+          <span class="forecast-range-meta">현재 시각 이후 · 1시간 간격</span>
+          <span class="mobile-scroll-cue" aria-hidden="true">좌우로 보기 →</span>
         </div>
 
-        <div
-          v-if="hours.length"
-          class="hourly-chart-scroll"
-          tabindex="0"
-          aria-label="현재 시각 이후 12시간의 기온과 날씨 예보"
-        >
-          <div class="hourly-chart" :style="{ '--hour-count': hours.length }">
-            <svg
-              class="temperature-graph"
-              viewBox="0 0 960 128"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id="forecast-temperature-area" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--weather-accent-text)" stop-opacity="0.3" />
-                  <stop offset="100%" stop-color="var(--weather-accent-text)" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <line v-for="y in [24, 68, 112]" :key="y" x1="0" :y1="y" x2="960" :y2="y" />
-              <polygon :points="chart.area" fill="url(#forecast-temperature-area)" />
-              <polyline :points="chart.line" />
-              <g
-                v-for="(dot, index) in chart.dots"
-                :key="hours[index].time"
-                class="temperature-point"
-                :class="{ 'is-next': index === 0 }"
+        <div v-if="hours.length" class="forecast-scroll-shell hourly-scroll-shell">
+          <div
+            class="hourly-chart-scroll"
+            tabindex="0"
+            aria-label="현재 시각 이후 12시간의 기온과 날씨 예보. 좌우로 스크롤할 수 있습니다."
+          >
+            <div class="hourly-chart" :style="{ '--hour-count': hours.length }">
+              <svg
+                class="temperature-graph"
+                viewBox="0 0 960 128"
+                preserveAspectRatio="none"
+                aria-hidden="true"
               >
-                <circle :cx="dot.x" :cy="dot.y" :r="index === 0 ? 5 : 3.5" />
-              </g>
-            </svg>
+                <defs>
+                  <linearGradient id="forecast-temperature-area" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--weather-accent-text)" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="var(--weather-accent-text)" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <line v-for="y in [24, 68, 112]" :key="y" x1="0" :y1="y" x2="960" :y2="y" />
+                <polygon :points="chart.area" fill="url(#forecast-temperature-area)" />
+                <polyline :points="chart.line" />
+                <g
+                  v-for="(dot, index) in chart.dots"
+                  :key="hours[index].time"
+                  class="temperature-point"
+                  :class="{ 'is-next': index === 0 }"
+                >
+                  <circle :cx="dot.x" :cy="dot.y" :r="index === 0 ? 5 : 3.5" />
+                </g>
+              </svg>
 
-            <div class="chart-hours">
-              <div
-                v-for="(hour, index) in hours"
-                :key="hour.time"
-                class="chart-hour"
-                :class="{ 'is-next': index === 0 }"
-                :aria-label="`${hourLabel(hour.time)}, ${configStore.formatTemp(hour.temp)}, ${hour.status}, 강수확률 ${percent(hour.rainChance)}`"
-              >
-                <time :datetime="hour.time">
-                  {{ index === 0 ? `다음 · ${hourLabel(hour.time)}` : hourLabel(hour.time) }}
-                </time>
-                <span class="forecast-icon" role="img" :aria-label="hour.status">
-                  {{ hour.visual.emoji }}
-                </span>
-                <strong class="chart-temp">{{ configStore.formatTemp(hour.temp) }}</strong>
-                <span class="rain-chance">☂ {{ percent(hour.rainChance) }}</span>
+              <div class="chart-hours">
+                <div
+                  v-for="(hour, index) in hours"
+                  :key="hour.time"
+                  class="chart-hour"
+                  :class="{ 'is-next': index === 0 }"
+                  :aria-label="`${hourLabel(hour.time)}, ${configStore.formatTemp(hour.temp)}, ${hour.status}, 강수확률 ${percent(hour.rainChance)}`"
+                >
+                  <time :datetime="hour.time">
+                    {{ index === 0 ? `다음 · ${hourLabel(hour.time)}` : hourLabel(hour.time) }}
+                  </time>
+                  <span class="forecast-icon" role="img" :aria-label="hour.status">
+                    {{ hour.visual.emoji }}
+                  </span>
+                  <strong class="chart-temp">{{ configStore.formatTemp(hour.temp) }}</strong>
+                  <span class="rain-chance">☂ {{ percent(hour.rainChance) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -192,35 +194,51 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
       <section class="forecast-section weekly-section" aria-labelledby="weekly-title">
         <div class="forecast-title-row">
           <h3 id="weekly-title">주간 전망</h3>
-          <span>최저 / 최고</span>
+          <span class="forecast-range-meta">최저 / 최고</span>
+          <span class="mobile-scroll-cue" aria-hidden="true">좌우로 보기 →</span>
         </div>
 
-        <div class="daily-list">
-          <article
-            v-for="(day, index) in days"
-            :key="day.date"
-            class="day-card"
-            :class="{ 'is-today': index === 0 }"
+        <div class="forecast-scroll-shell daily-scroll-shell">
+          <div
+            class="daily-list"
+            tabindex="0"
+            :aria-label="`${compact ? 5 : 7}일간 주간 전망. 좌우로 스크롤할 수 있습니다.`"
           >
-            <div class="day-date">
-              <strong>{{ dayLabel(day.date, index) }}</strong>
-              <time :datetime="day.date">{{ dateLabel(day.date) }}</time>
-            </div>
-            <span class="forecast-icon" role="img" :aria-label="day.status">
-              {{ day.visual.emoji }}
-            </span>
-            <span class="forecast-status">{{ day.status }}</span>
-            <span class="daily-temp">
-              <b>{{ configStore.formatTemp(day.min) }}</b>
-              <strong>{{ configStore.formatTemp(day.max) }}</strong>
-            </span>
-            <span class="rain-chance">☂ {{ percent(day.rainChance) }}</span>
-          </article>
+            <article
+              v-for="(day, index) in days"
+              :key="day.date"
+              class="day-card"
+              :class="{ 'is-today': index === 0 }"
+            >
+              <div class="day-date">
+                <strong>{{ dayLabel(day.date, index) }}</strong>
+                <time :datetime="day.date">{{ dateLabel(day.date) }}</time>
+              </div>
+              <span class="forecast-icon" role="img" :aria-label="day.status">
+                {{ day.visual.emoji }}
+              </span>
+              <span class="forecast-status">{{ day.status }}</span>
+              <span class="daily-temp">
+                <b>{{ configStore.formatTemp(day.min) }}</b>
+                <strong>{{ configStore.formatTemp(day.max) }}</strong>
+              </span>
+              <span class="rain-chance">☂ {{ percent(day.rainChance) }}</span>
+            </article>
+          </div>
         </div>
       </section>
 
-      <footer class="forecast-source">
-        <span v-if="loading">예보 갱신 중…</span>
+      <footer class="forecast-source" aria-live="polite">
+        <button
+          v-if="error"
+          class="forecast-retry"
+          type="button"
+          :title="error"
+          @click="emit('retry')"
+        >
+          갱신 실패 · 다시 시도
+        </button>
+        <span v-else-if="loading">예보 갱신 중…</span>
         <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Data by Open-Meteo</a>
       </footer>
     </template>
@@ -312,6 +330,22 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
 .forecast-title-row span {
   color: var(--weather-on-panel-faint);
   font-size: 11px;
+}
+
+.mobile-scroll-cue {
+  display: none;
+}
+
+.forecast-scroll-shell {
+  position: relative;
+  min-width: 0;
+}
+
+.hourly-chart-scroll:focus-visible,
+.daily-list:focus-visible {
+  border-radius: var(--weather-radius-control);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .hourly-chart-scroll {
@@ -498,6 +532,26 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   margin-left: auto;
 }
 
+.forecast-retry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffd0ae;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.forecast-retry:hover {
+  color: var(--weather-on-panel);
+}
+
+.forecast-retry:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .is-compact .daily-list {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -529,9 +583,65 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
     gap: 0.35rem;
   }
 
+  .hourly-section .forecast-range-meta,
+  .weekly-section .forecast-range-meta {
+    display: none;
+  }
+
+  .mobile-scroll-cue {
+    display: inline;
+    color: var(--weather-accent-text);
+    font-weight: 800;
+  }
+
+  .hourly-scroll-shell::after,
+  .daily-scroll-shell::after {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    bottom: 0.3rem;
+    width: 30px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--weather-panel-opaque) 88%, transparent)
+    );
+    content: '';
+    pointer-events: none;
+  }
+
+  .hourly-chart-scroll,
+  .daily-list {
+    padding-right: 1.5rem;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .chart-hour,
   .day-card {
-    grid-template-columns: minmax(72px, 1fr) 34px minmax(86px, 1fr) auto;
-    gap: 0.45rem;
+    scroll-snap-align: start;
+  }
+
+  .daily-list {
+    grid-auto-columns: minmax(128px, 1fr);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    padding-bottom: 0.3rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .is-compact .daily-list {
+    grid-auto-columns: minmax(100px, 1fr);
+  }
+
+  .day-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.35rem;
+    min-height: 132px;
+    text-align: center;
   }
 
   .day-card > .forecast-status {
@@ -539,27 +649,11 @@ const percent = (value) => (value === null || value === undefined ? '-' : `${val
   }
 
   .daily-temp {
+    justify-content: center;
     gap: 0.4rem;
   }
 
   .day-card > .rain-chance {
-    grid-column: 3 / -1;
-    justify-self: end;
-  }
-
-  .is-compact .daily-list {
-    grid-auto-columns: minmax(100px, 1fr);
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    padding-bottom: 0.3rem;
-    overflow-x: auto;
-  }
-
-  .is-compact .day-card {
-    grid-template-columns: 1fr;
-  }
-
-  .is-compact .day-card > .rain-chance {
     grid-column: auto;
     justify-self: center;
   }

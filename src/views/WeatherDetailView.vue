@@ -48,17 +48,20 @@ const formatDateTime = (timestamp, timezoneOffset = 0) => {
 }
 
 const loadForecast = async (force = false) => {
-  if (!weather.value) return
+  const id = weather.value?.id
+  if (!id) return
 
   forecastLoading.value = true
   forecastError.value = ''
 
   try {
-    await weatherStore.loadForecast(weather.value.id, force)
+    await weatherStore.loadForecast(id, force)
   } catch (error) {
-    forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+    if (weather.value?.id === id) {
+      forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+    }
   } finally {
-    forecastLoading.value = false
+    if (weather.value?.id === id) forecastLoading.value = false
   }
 }
 
@@ -416,11 +419,29 @@ watch(
   }
 
   .metric-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .metric-card > :deep(.el-card__body) {
+    gap: 0.55rem;
+    padding: 0.75rem;
+  }
+
+  .metric-icon {
+    width: 34px;
+    height: 34px;
   }
 
   .weather-details :deep(.el-descriptions__label.el-descriptions__cell) {
     width: 42%;
+  }
+}
+
+@media (max-width: 359px) {
+  .metric-card > :deep(.el-card__body) {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

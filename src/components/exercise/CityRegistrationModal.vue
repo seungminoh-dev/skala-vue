@@ -78,6 +78,7 @@ const addCity = async (location) => {
 
     <ElDialog
       v-model="dialogVisible"
+      class="registration-dialog"
       title="도시 추가"
       width="min(92vw, 640px)"
       destroy-on-close
@@ -326,7 +327,47 @@ const addCity = async (location) => {
   font-size: 12px;
 }
 
+:global(.registration-dialog.el-dialog) {
+  display: flex;
+  max-height: calc(100dvh - 2rem);
+  flex-direction: column;
+  margin-block: max(1rem, 5vh) !important;
+}
+
+:global(.registration-dialog .el-dialog__header),
+:global(.registration-dialog .el-dialog__footer) {
+  flex: none;
+}
+
+:global(.registration-dialog .el-dialog__body) {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 @media (max-width: 767px) {
+  :global(.registration-dialog.el-dialog) {
+    width: calc(100vw - 2rem) !important;
+    margin-block: 1rem !important;
+  }
+
+  :global(.registration-dialog .el-dialog__body) {
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  :global(.registration-dialog .el-dialog__footer) {
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .registration-content {
+    gap: 0.9rem;
+  }
+
+  .location-results {
+    max-height: none;
+  }
+
   .result-heading {
     align-items: flex-start;
     flex-direction: column;

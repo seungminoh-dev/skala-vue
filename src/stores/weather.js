@@ -5,6 +5,7 @@ import { forecast } from '@/services/openMeteoApi.js'
 const STORAGE_KEY = 'weather-dashboard:v2'
 const CURRENT_TTL = 2 * 60 * 60 * 1000
 const FORECAST_TTL = 60 * 60 * 1000
+const forecastRequests = new Map()
 
 const record = (state, id) => {
   const location = state.locations[id]
@@ -123,9 +124,22 @@ export const useWeatherStore = defineStore('weather', {
       const cached = this.forecastById[id]
       if (!force && cached && Date.now() - cached.fetchedAt < FORECAST_TTL) return cached
 
-      const data = await forecast(location)
-      this.forecastById[id] = data
-      return data
+      if (forecastRequests.has(id)) return forecastRequests.get(id)
+
+      const { lat, lon } = location
+      const request = forecast(location)
+        .then((data) => {
+          const latest = this.locations[id]
+
+          if (latest?.lat === lat && latest?.lon === lon) this.forecastById[id] = data
+          return data
+        })
+        .finally(() => {
+          if (forecastRequests.get(id) === request) forecastRequests.delete(id)
+        })
+
+      forecastRequests.set(id, request)
+      return request
     },
   },
 })

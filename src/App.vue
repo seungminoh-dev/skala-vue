@@ -13,6 +13,7 @@ configStore.load()
 weatherStore.load()
 
 const isHeaderHidden = ref(false)
+const hasKeyboardFocus = ref(false)
 let previousScrollY = 0
 let scrollFrameId = null
 const activeMenu = computed(() => (route.name === 'detail' ? '/' : route.path))
@@ -60,6 +61,14 @@ const stopHeaderScroll = () => {
   }
 }
 
+const handleHeaderFocusin = (event) => {
+  hasKeyboardFocus.value = event.target.matches(':focus-visible')
+}
+
+const handleHeaderFocusout = (event) => {
+  if (!event.currentTarget.contains(event.relatedTarget)) hasKeyboardFocus.value = false
+}
+
 onMounted(async () => {
   previousScrollY = window.scrollY
   window.addEventListener('scroll', handleHeaderScroll, { passive: true })
@@ -71,7 +80,13 @@ onBeforeUnmount(stopHeaderScroll)
 
 <template>
   <div class="app-shell" :class="weatherCanvas.tone" :style="canvasStyle">
-    <header class="app-header" :class="{ 'is-hidden': isHeaderHidden }">
+    <header
+      class="app-header"
+      :class="{ 'is-hidden': isHeaderHidden && !hasKeyboardFocus }"
+      @pointerdown="hasKeyboardFocus = false"
+      @focusin="handleHeaderFocusin"
+      @focusout="handleHeaderFocusout"
+    >
       <div class="header-inner weather-surface">
         <div class="brand-navigation">
           <RouterLink class="brand" :to="{ name: 'home' }" aria-label="Weather Board 홈">
@@ -155,12 +170,12 @@ onBeforeUnmount(stopHeaderScroll)
   will-change: opacity, transform;
 }
 
-.app-header.is-hidden:not(:focus-within) {
+.app-header.is-hidden {
   opacity: 0;
   transform: translateY(calc(-100% - 0.75rem));
 }
 
-.app-header.is-hidden:not(:focus-within) .header-inner {
+.app-header.is-hidden .header-inner {
   pointer-events: none;
 }
 
@@ -259,10 +274,19 @@ onBeforeUnmount(stopHeaderScroll)
 }
 
 @media (max-width: 767px) {
+  .header-inner {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    min-height: 64px;
+  }
+
   .brand-navigation {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+    flex: 1;
     justify-content: space-between;
-    min-height: 56px;
+    gap: 0.5rem;
+    min-height: 48px;
   }
 
   .brand {

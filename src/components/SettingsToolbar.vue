@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { Aim, Refresh } from '@element-plus/icons-vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Aim, Refresh, Setting } from '@element-plus/icons-vue'
 import { ElButton, ElMessage, ElOption, ElSelect, ElTooltip } from 'element-plus'
 import ThemeModeToggle from '@/components/ThemeModeToggle.vue'
 import UnitToggler from '@/components/UnitToggler.vue'
@@ -12,6 +12,8 @@ const configStore = useConfigStore()
 const weatherStore = useWeatherStore()
 const isLocating = ref(false)
 const isRefreshing = ref(false)
+const mobileOpen = ref(false)
+const toolbar = ref(null)
 
 const primaryId = computed({
   get: () => configStore.primaryId,
@@ -96,6 +98,10 @@ const refreshWeather = async () => {
   }
 }
 
+const closeOutside = (event) => {
+  if (mobileOpen.value && !toolbar.value?.contains(event.target)) mobileOpen.value = false
+}
+
 watch(
   () => [...weatherStore.locationIds],
   (ids) => {
@@ -108,61 +114,83 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => document.addEventListener('pointerdown', closeOutside))
+onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOutside))
 </script>
 
 <template>
-  <aside class="settings-toolbar" aria-label="날씨 서비스 설정">
-    <div class="toolbar-settings">
-      <div class="setting-group primary-location-setting">
-        <span class="setting-label">메인 지역</span>
-        <ElSelect
-          v-model="primaryId"
-          class="location-select"
-          placeholder="등록 도시 없음"
-          aria-label="메인 지역 선택"
-          :disabled="weatherStore.weatherList.length === 0"
-        >
-          <ElOption
-            v-for="weather in weatherStore.weatherList"
-            :key="weather.id"
-            :label="weather.name"
-            :value="weather.id"
-          />
-        </ElSelect>
+  <aside
+    ref="toolbar"
+    class="settings-toolbar"
+    :class="{ 'is-open': mobileOpen }"
+    aria-label="날씨 서비스 설정"
+    @keydown.esc="mobileOpen = false"
+  >
+    <ElButton
+      class="mobile-settings-button"
+      plain
+      aria-controls="weather-settings-panel"
+      :aria-expanded="mobileOpen"
+      @click="mobileOpen = !mobileOpen"
+    >
+      <Setting class="action-icon" aria-hidden="true" />
+      <span>설정</span>
+    </ElButton>
+
+    <div id="weather-settings-panel" class="toolbar-content">
+      <div class="toolbar-settings">
+        <div class="setting-group primary-location-setting">
+          <span class="setting-label">메인 지역</span>
+          <ElSelect
+            v-model="primaryId"
+            class="location-select"
+            placeholder="등록 도시 없음"
+            aria-label="메인 지역 선택"
+            :disabled="weatherStore.weatherList.length === 0"
+          >
+            <ElOption
+              v-for="weather in weatherStore.weatherList"
+              :key="weather.id"
+              :label="weather.name"
+              :value="weather.id"
+            />
+          </ElSelect>
+        </div>
+
+        <div class="setting-group compact-setting">
+          <span class="setting-label">단위</span>
+          <UnitToggler />
+        </div>
       </div>
 
-      <div class="setting-group compact-setting">
-        <span class="setting-label">단위</span>
-        <UnitToggler />
+      <div class="toolbar-actions" role="group" aria-label="빠른 설정">
+        <ElTooltip content="내 위치 등록" placement="bottom" :show-after="300">
+          <ElButton
+            class="toolbar-icon-button"
+            :loading="isLocating"
+            plain
+            aria-label="내 위치 등록"
+            @click="addCurrentLocation"
+          >
+            <Aim class="action-icon" aria-hidden="true" />
+          </ElButton>
+        </ElTooltip>
+
+        <ElTooltip content="전체 날씨 새로고침" placement="bottom" :show-after="300">
+          <ElButton
+            class="toolbar-icon-button"
+            :loading="isRefreshing"
+            plain
+            aria-label="전체 날씨 새로고침"
+            @click="refreshWeather"
+          >
+            <Refresh class="action-icon" aria-hidden="true" />
+          </ElButton>
+        </ElTooltip>
+
+        <ThemeModeToggle />
       </div>
-    </div>
-
-    <div class="toolbar-actions" role="group" aria-label="빠른 설정">
-      <ElTooltip content="내 위치 등록" placement="bottom" :show-after="300">
-        <ElButton
-          class="toolbar-icon-button"
-          :loading="isLocating"
-          plain
-          aria-label="내 위치 등록"
-          @click="addCurrentLocation"
-        >
-          <Aim class="action-icon" aria-hidden="true" />
-        </ElButton>
-      </ElTooltip>
-
-      <ElTooltip content="전체 날씨 새로고침" placement="bottom" :show-after="300">
-        <ElButton
-          class="toolbar-icon-button"
-          :loading="isRefreshing"
-          plain
-          aria-label="전체 날씨 새로고침"
-          @click="refreshWeather"
-        >
-          <Refresh class="action-icon" aria-hidden="true" />
-        </ElButton>
-      </ElTooltip>
-
-      <ThemeModeToggle />
     </div>
   </aside>
 </template>
@@ -177,10 +205,16 @@ watch(
   min-width: 0;
 }
 
+.toolbar-content,
 .toolbar-settings,
 .toolbar-actions {
   display: flex;
   align-items: flex-end;
+}
+
+.toolbar-content {
+  gap: 1rem;
+  min-width: 0;
 }
 
 .toolbar-settings {
@@ -246,6 +280,10 @@ watch(
   height: 17px;
 }
 
+.mobile-settings-button {
+  display: none;
+}
+
 @media (max-width: 1023px) {
   .settings-toolbar {
     width: 100%;
@@ -255,14 +293,47 @@ watch(
   }
 }
 
-@media (max-width: 479px) {
+@media (max-width: 767px) {
   .settings-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: end;
-    gap: 0.65rem;
+    position: relative;
+    width: auto;
+    flex: none;
+    padding-top: 0;
+    border-top: 0;
   }
 
+  .mobile-settings-button {
+    display: inline-flex;
+    min-width: 40px;
+    gap: 0.35rem;
+    padding-inline: 0.7rem;
+    border-color: var(--weather-panel-border);
+    background: var(--weather-panel-soft);
+    color: var(--weather-on-panel);
+  }
+
+  .toolbar-content {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 0.65rem);
+    right: 0;
+    display: none;
+    width: min(340px, calc(100vw - 2rem));
+    padding: 0.85rem;
+    border: 1px solid var(--weather-panel-border);
+    border-radius: var(--weather-radius-surface);
+    background: var(--weather-panel-opaque);
+    box-shadow: var(--weather-shadow-surface);
+    backdrop-filter: var(--weather-backdrop);
+  }
+
+  .settings-toolbar.is-open .toolbar-content {
+    display: grid;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 479px) {
   .toolbar-settings {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

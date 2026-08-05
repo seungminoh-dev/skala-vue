@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { ElPopconfirm } from 'element-plus'
@@ -108,18 +108,26 @@ const removeCity = (weather) => {
   if (selectedId.value === weather.id) selectedId.value = null
 }
 
+const resetFilters = () => {
+  searchQuery.value = ''
+  weatherFilter.value = 'all'
+}
+
 const loadPrimaryForecast = async (force = false) => {
-  if (!primaryWeather.value) return
+  const id = primaryWeather.value?.id
+  if (!id) return
 
   forecastLoading.value = true
   forecastError.value = ''
 
   try {
-    await weatherStore.loadForecast(primaryWeather.value.id, force)
+    await weatherStore.loadForecast(id, force)
   } catch (error) {
-    forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+    if (primaryWeather.value?.id === id) {
+      forecastError.value = error?.response?.data?.reason ?? error?.message ?? '예보 요청 실패'
+    }
   } finally {
-    forecastLoading.value = false
+    if (primaryWeather.value?.id === id) forecastLoading.value = false
   }
 }
 
@@ -131,19 +139,6 @@ watch(
   },
   { immediate: true },
 )
-
-watch(selectedCityInfo, (weather, previous) => {
-  if (!weather || weather.id === previous?.id) return
-  console.log(
-    `[Watch감지] 상태바 업데이트 : ${weather.name}이 선택되었습니다. | ${previous?.name ?? '미선택'}->${weather.name}`,
-  )
-})
-
-watchEffect(() => {
-  console.log(
-    `[WatchEffect] 검색어 변경이 감지되었습니다. ${searchQuery.value}에 해당하는 Filter Updated`,
-  )
-})
 </script>
 
 <template>
@@ -261,7 +256,9 @@ watchEffect(() => {
             class="filter-empty-state weather-surface"
             description="검색·날씨 조건에 맞는 등록 지역이 없습니다."
             :image-size="88"
-          />
+          >
+            <ElButton type="primary" plain @click="resetFilters">필터 초기화</ElButton>
+          </ElEmpty>
 
           <div
             class="weather-status weather-surface"

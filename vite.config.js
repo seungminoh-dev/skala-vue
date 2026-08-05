@@ -4,12 +4,12 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   envPrefix: ['VITE_', 'API_KEY'],
-  plugins: [vue(), vueDevTools()],
+  plugins: [vue(), ...(command === 'serve' ? [vueDevTools()] : [])],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+}))
