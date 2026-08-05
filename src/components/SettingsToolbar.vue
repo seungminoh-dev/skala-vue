@@ -13,6 +13,7 @@ const weatherStore = useWeatherStore()
 const isLocating = ref(false)
 const isRefreshing = ref(false)
 const mobileOpen = ref(false)
+const tourActive = ref(false)
 const toolbar = ref(null)
 
 const primaryId = computed({
@@ -99,8 +100,17 @@ const refreshWeather = async () => {
 }
 
 const closeOutside = (event) => {
-  if (mobileOpen.value && !toolbar.value?.contains(event.target)) mobileOpen.value = false
+  if (mobileOpen.value && !tourActive.value && !toolbar.value?.contains(event.target)) {
+    mobileOpen.value = false
+  }
 }
+
+const setTourActive = (active) => {
+  tourActive.value = active
+  mobileOpen.value = active
+}
+
+defineExpose({ setTourActive })
 
 watch(
   () => [...weatherStore.locationIds],
@@ -168,6 +178,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOutside))
         <ElTooltip content="내 위치 등록" placement="bottom" :show-after="300">
           <ElButton
             class="toolbar-icon-button"
+            data-tour="gps"
             :loading="isLocating"
             plain
             aria-label="내 위치 등록"
@@ -180,6 +191,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOutside))
         <ElTooltip content="전체 날씨 새로고침" placement="bottom" :show-after="300">
           <ElButton
             class="toolbar-icon-button"
+            data-tour="refresh"
             :loading="isRefreshing"
             plain
             aria-label="전체 날씨 새로고침"

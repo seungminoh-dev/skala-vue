@@ -44,6 +44,7 @@ const selectedWeatherLabel = computed(
         <input
           id="city-search"
           class="search-input"
+          data-tour="city-search"
           name="city"
           type="search"
           placeholder="도시·지역·국가 검색"

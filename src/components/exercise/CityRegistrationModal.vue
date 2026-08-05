@@ -84,9 +84,11 @@ const addCity = async (location) => {
 <template>
   <div class="city-registration">
     <button class="city-add-card" type="button" @click="openModal">
-      <span class="add-card-icon" aria-hidden="true">+</span>
-      <strong>내 도시 추가</strong>
-      <span>새 지역을 검색해 등록하세요</span>
+      <span class="city-add-tour-target" data-tour="city-add">
+        <span class="add-card-icon" aria-hidden="true">+</span>
+        <strong>내 도시 추가</strong>
+        <span>새 지역을 검색해 등록하세요</span>
+      </span>
     </button>
 
     <ElDialog
@@ -193,6 +195,13 @@ const addCity = async (location) => {
     box-shadow 0.18s ease;
 }
 
+.city-add-tour-target {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+}
+
 .city-add-card:hover {
   border-color: var(--weather-accent-text);
   transform: translateY(-3px);
@@ -223,7 +232,7 @@ const addCity = async (location) => {
   font-weight: 850;
 }
 
-.city-add-card > span:last-child {
+.city-add-tour-target > span:last-child {
   max-width: 190px;
   color: var(--weather-on-panel-muted);
   font-size: 13px;

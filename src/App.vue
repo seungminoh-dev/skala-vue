@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import OnboardingTour from '@/components/OnboardingTour.vue'
 import SettingsToolbar from '@/components/SettingsToolbar.vue'
 import { useConfigStore } from '@/stores/configStore.js'
 import { useWeatherStore } from '@/stores/weather.js'
@@ -15,6 +16,8 @@ weatherStore.load()
 /* Auto Hide Header 구현용 */
 const isHeaderHidden = ref(false)
 const hasKeyboardFocus = ref(false)
+const isTourActive = ref(false)
+const settingsToolbar = ref(null)
 let previousScrollY = 0
 let scrollFrameId = null
 
@@ -74,6 +77,11 @@ const handleHeaderFocusout = (event) => {
   if (!event.currentTarget.contains(event.relatedTarget)) hasKeyboardFocus.value = false
 }
 
+const handleTourActive = (active) => {
+  isTourActive.value = active
+  settingsToolbar.value?.setTourActive(active)
+}
+
 onMounted(async () => {
   previousScrollY = window.scrollY
   window.addEventListener('scroll', handleHeaderScroll, { passive: true })
@@ -88,7 +96,7 @@ onBeforeUnmount(stopHeaderScroll)
     <!-- Header -->
     <header
       class="app-header"
-      :class="{ 'is-hidden': isHeaderHidden && !hasKeyboardFocus }"
+      :class="{ 'is-hidden': isHeaderHidden && !hasKeyboardFocus && !isTourActive }"
       @pointerdown="hasKeyboardFocus = false"
       @focusin="handleHeaderFocusin"
       @focusout="handleHeaderFocusout"
@@ -115,13 +123,14 @@ onBeforeUnmount(stopHeaderScroll)
           </nav>
         </div>
         <!-- Setting Toolbar -->
-        <SettingsToolbar />
+        <SettingsToolbar ref="settingsToolbar" />
       </div>
     </header>
     <!-- Main Content -->
     <main class="app-container">
       <RouterView />
     </main>
+    <OnboardingTour v-if="route.name === 'home'" @active-change="handleTourActive" />
   </div>
 </template>
 
