@@ -346,6 +346,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOutside))
 }
 
 @media (max-width: 479px) {
+  .toolbar-content {
+    right: -1.65rem;
+  }
+
   .toolbar-settings {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

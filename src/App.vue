@@ -123,7 +123,7 @@ onBeforeUnmount(stopHeaderScroll)
           </nav>
         </div>
         <!-- Setting Toolbar -->
-        <SettingsToolbar ref="settingsToolbar" />
+        <SettingsToolbar ref="settingsToolbar" class="header-settings" />
       </div>
     </header>
     <!-- Main Content -->
@@ -307,6 +307,44 @@ onBeforeUnmount(stopHeaderScroll)
 
   .brand {
     font-size: 15px;
+  }
+}
+
+@media (max-width: 479px) {
+  .header-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .brand-navigation {
+    display: contents;
+  }
+
+  .brand {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .header-settings {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .main-nav {
+    display: grid;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .nav-link {
+    min-width: 0;
+    padding-inline: 0.5rem;
+    text-align: center;
+    white-space: nowrap;
   }
 }
 </style>

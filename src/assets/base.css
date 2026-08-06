@@ -125,6 +125,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (max-width: 479px) {
+  body {
+    min-width: 0;
+  }
+}
+
 button,
 input,
 select {
